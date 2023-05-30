@@ -37,10 +37,13 @@ gcc -m32 -I lib/kernel/ -I lib/ -I kernel/ -c -fno-builtin -o out/init.o kernel/
 echo -e "生成 timer.o 文件"
 gcc -m32 -I lib/kernel/ -c -o out/timer.o device/timer.c
 
+echo -e "生成 debug.o 文件"
+gcc -m32 -I lib/kernel/ -c -o out/debug.o kernel/debug.c
+
 echo -e "生成 main.o 文件"
 gcc -m32 -I lib/kernel/ -I lib/ -I kernel/ -c -fno-builtin -o out/kernel/main.o kernel/main.c
 
 echo -e "生成 kernel.bin 并且拷贝到硬盘"
 ld -melf_i386  -Ttext 0xc0001500 -e main -o ./out/kernel/kernel.bin \
-    out/kernel/main.o out/kernel/print.o out/init.o out/interrupt.o out/kernel/kernel.o out/timer.o \
+    out/kernel/main.o out/kernel/print.o out/init.o out/interrupt.o out/kernel/kernel.o out/timer.o out/debug.o \
     &&  dd if=./out/kernel/kernel.bin of=./hd60M.img bs=512 count=200 seek=9 conv=notrunc 
