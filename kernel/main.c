@@ -2,7 +2,7 @@
 #include "init.h"
 #include "debug.h"
 
-int main() {
+int main(void) {
     // 测试 print 函数
     put_str("I am kernel\n");
     // put_str("hello world 2023-05-20 11:52\n");
