@@ -1,6 +1,18 @@
-#ifndef __KERNEL_GLOBAL_H
-#define __KERNEL_GLOBAL_H
-#include "stdint.h"
+/**
+ * @file global.h
+ * @author your name (you@domain.com)
+ * @brief 
+ * @version 0.1
+ * @date 2023-05-31
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
+
+#ifndef KERNEL_GLOBAL_H_
+#define KERNEL_GLOBAL_H_
+
+#include "lib/stdint.h"
 
 #define	 RPL0  0
 #define	 RPL1  1
@@ -24,4 +36,9 @@
 #define	 IDT_DESC_ATTR_DPL0  ((IDT_DESC_P << 7) + (IDT_DESC_DPL0 << 5) + IDT_DESC_32_TYPE)
 #define	 IDT_DESC_ATTR_DPL3  ((IDT_DESC_P << 7) + (IDT_DESC_DPL3 << 5) + IDT_DESC_32_TYPE)
 
-#endif
+#define NULL ((void*)0)
+#define bool int
+#define true 1
+#define false 0
+
+#endif  // KERNEL_GLOBAL_H_
