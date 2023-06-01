@@ -6,7 +6,7 @@
 #include "kernel/debug.h"
 
 void bitmap_init(struct bitmap* bitmap) {
-    memset(bitmap, 0, bitmap->bmap_bytes_len);
+    memset(bitmap->bits, 0, bitmap->bmap_bytes_len);
 }
 
 bool bitmap_scan_test(struct bitmap* bmap, uint32_t bit_idx) {
@@ -22,6 +22,13 @@ int bitmap_scan(struct bitmap* bmap, uint32_t cnt) {
     while ((0xff == bmap->bits[idx_byte]) && (idx_byte < bmap->bmap_bytes_len)) {
         idx_byte++;
     }
+    asm volatile ("xchg %%bx, %%bx" ::);
+    put_str("idx_byte: ");
+    put_int(idx_byte);
+    put_str("\n");
+    put_str("bmap->bmap_bytes_len: ");
+    put_int(bmap->bmap_bytes_len);
+    put_str("\n");
     ASSERT(idx_byte < bmap->bmap_bytes_len);
     if (idx_byte == bmap->bmap_bytes_len) {
         return -1;

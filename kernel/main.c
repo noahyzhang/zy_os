@@ -1,6 +1,7 @@
 #include "lib/kernel/print.h"
 #include "kernel/init.h"
 #include "kernel/debug.h"
+#include "kernel/memory.h"
 
 int main(void) {
     // 测试 print 函数
@@ -24,8 +25,15 @@ int main(void) {
     // asm volatile("sti");
 
     // 测试 ASSERT
+    // init_all();
+    // ASSERT(1 == 2);
+
+    // 测试申请内存
     init_all();
-    ASSERT(1 == 2);
+    void* addr = get_kernel_pages(3);
+    put_str("get_kernel_page start vaddr is ");
+    put_int((uint32_t)addr);
+    put_str("\n");
 
     for (;;) {}
 
