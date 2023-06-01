@@ -12,7 +12,7 @@
 #ifndef LIB_STRING_H_
 #define LIB_STRING_H_
 
-#include <stdint.h>
+#include "lib/stdint.h"
 
 /**
  * @brief 将 dst 起始的 size 个字节设置为 value

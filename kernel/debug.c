@@ -1,6 +1,6 @@
-#include "debug.h"
-#include "print.h"
-#include "interrupt.h"
+#include "kernel/debug.h"
+#include "lib/kernel/print.h"
+#include "kernel/interrupt.h"
 
 /* 打印文件名,行号,函数名,条件并使程序悬停 */
 void panic_spin(char* filename,	       \

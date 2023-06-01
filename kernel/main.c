@@ -1,6 +1,6 @@
-#include "print.h"
-#include "init.h"
-#include "debug.h"
+#include "lib/kernel/print.h"
+#include "kernel/init.h"
+#include "kernel/debug.h"
 
 int main(void) {
     // 测试 print 函数
