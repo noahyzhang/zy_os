@@ -15,6 +15,8 @@
 #include "lib/stdint.h"
 #include "lib/kernel/bitmap.h"
 
+#define PAGE_SIZE (4096)
+
 // 内存池标志，用于判断用那个内存池
 enum pool_flags {
     // 内核内存池

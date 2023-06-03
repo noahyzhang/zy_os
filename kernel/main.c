@@ -3,6 +3,14 @@
 #include "kernel/debug.h"
 #include "kernel/memory.h"
 
+void kernel_thread_func(void* arg) {
+    char* para = arg;
+    for (;;) {
+        put_str(para);
+        put_str("\n");
+    }
+}
+
 int main(void) {
     // 测试 print 函数
     put_str("I am kernel\n");
@@ -29,11 +37,15 @@ int main(void) {
     // ASSERT(1 == 2);
 
     // 测试申请内存
+    // init_all();
+    // void* addr = get_kernel_pages(3);
+    // put_str("get_kernel_page start vaddr is ");
+    // put_int((uint32_t)addr);
+    // put_str("\n");
+
+    // 测试创建线程
     init_all();
-    void* addr = get_kernel_pages(3);
-    put_str("get_kernel_page start vaddr is ");
-    put_int((uint32_t)addr);
-    put_str("\n");
+    thread_start("kernel_thread_a", 31, kernel_thread_func, "arg1");
 
     for (;;) {}
 
