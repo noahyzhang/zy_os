@@ -65,7 +65,7 @@ static void* vaddr_get(enum pool_flags pf, uint32_t pg_cnt) {
         if (bit_idx_start == -1) {
             return NULL;
         }
-        asm volatile ("xchg %%bx, %%bx" ::);
+        // asm volatile ("xchg %%bx, %%bx" ::);
         for (; cnt < pg_cnt;) {
             bitmap_set(&kernel_vaddr.vaddr_bitmap, bit_idx_start + cnt++, 1);
         }
@@ -227,16 +227,16 @@ static void mem_pool_init(uint32_t all_mem) {
     kernel_pool.pool_bitmap.bits = (void*)MEM_BITMAP_BASE;
     user_pool.pool_bitmap.bits = (void*)(MEM_BITMAP_BASE + kbm_length);
 
-    put_str("kernel_pool_bitmap_start:");
-    put_int((int)kernel_pool.pool_bitmap.bits);
-    put_str("  kernel_pool_phy_addr_start:");
-    put_int(kernel_pool.phy_addr_start);
-    put_str("\n");
-    put_str("user_pool_bitmap_start:");
-    put_int((int)user_pool.pool_bitmap.bits);
-    put_str("  user_pool_phy_addr_start:");
-    put_int(user_pool.phy_addr_start);
-    put_str("\n");
+    // put_str("kernel_pool_bitmap_start:");
+    // put_int((int)kernel_pool.pool_bitmap.bits);
+    // put_str("  kernel_pool_phy_addr_start:");
+    // put_int(kernel_pool.phy_addr_start);
+    // put_str("\n");
+    // put_str("user_pool_bitmap_start:");
+    // put_int((int)user_pool.pool_bitmap.bits);
+    // put_str("  user_pool_phy_addr_start:");
+    // put_int(user_pool.phy_addr_start);
+    // put_str("\n");
 
     // 将位图置 0
     bitmap_init(&kernel_pool.pool_bitmap);
@@ -261,7 +261,7 @@ static void mem_pool_init(uint32_t all_mem) {
     bitmap_init(&kernel_vaddr.vaddr_bitmap);
     put_str("mem_pool_init done\n");
 
-    asm volatile("xchg %%bx, %%bx"::);
+    // asm volatile("xchg %%bx, %%bx"::);
 }
 
 void mem_init() {
