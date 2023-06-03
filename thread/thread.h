@@ -13,6 +13,7 @@
 #define THREAD_THREAD_H_
 
 #include "lib/stdint.h"
+#include "lib/kernel/list.h"
 
 // 函数类型
 typedef void thread_func(void* arg);
@@ -95,7 +96,21 @@ struct task_struct {
     // 优先级
     uint8_t priority;
     char name[16];
+    uint8_t priority;
+    // 每次在处理器上执行的时钟滴答数
+    uint8_t ticks;
+    // 此任务自从上 CPU 运行后至今占用了多少 cpu 滴答数
+    // 任务运行了多久
+    uint32_t elapsed_ticks;
+    // 用于线程在一般队列中的节点（比如：就绪队列或者其他队列）
+    struct list_elem general_tag;
+    // 用于线程队列 thread_all_list 中的节点
+    struct list_elem all_list_tag;
+    // 进程自己页表的虚拟地址
+    // 如果是线程，则此字段为 NULL
+    uint32_t* pg_dir;
     // 栈的边界标记，用于检测栈的溢出
+    // 这个字段因为要作为边界标记，所以必须放在结构体的末尾
     uint32_t stack_magic;
 };
 
