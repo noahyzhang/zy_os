@@ -98,7 +98,7 @@ uint32_t* pte_ptr(uint32_t vaddr) {
  */
 uint32_t* pde_ptr(uint32_t vaddr) {
     // 0xfffff 用来访问页表本身所在的地址
-    uint32_t pde = (uint32_t*)((0xfffff000) + PDE_IDX(vaddr) * 4);
+    uint32_t* pde = (uint32_t*)((0xfffff000) + PDE_IDX(vaddr) * 4);
     return pde;
 }
 
@@ -264,7 +264,7 @@ static void mem_pool_init(uint32_t all_mem) {
     // asm volatile("xchg %%bx, %%bx"::);
 }
 
-void mem_init() {
+void mem_init(void) {
     put_str("mem_init start\n");
     uint32_t mem_bytes_total = (*(uint32_t*)(0xb00));
     mem_pool_init(mem_bytes_total);

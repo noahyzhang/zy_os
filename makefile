@@ -90,4 +90,4 @@ clean:
 
 build: $(BUILD_DIR)/kernel.bin $(BUILD_DIR)/mbr.bin $(BUILD_DIR)/loader.bin
 
-all: mk_dir mk_img build hd
+all: clean mk_dir mk_img build hd

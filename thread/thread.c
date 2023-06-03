@@ -2,6 +2,7 @@
 #include "lib/string.h"
 #include "kernel/global.h"
 #include "kernel/memory.h"
+#include "lib/kernel/print.h"
 
 // 由 kernel_thread 去执行 func(func_arg)
 static void kernel_thread(thread_func* func, void* func_arg) {
@@ -36,10 +37,17 @@ void init_thread(struct task_struct* pthread, char* name, int prio) {
 }
 
 struct task_struct* thread_start(char* name, int prio, thread_func func, void* func_arg) {
+    // asm volatile ("xchg %%bx, %%bx" ::);
+    // put_str("thread_start\n");
+    // asm volatile ("xchg %%bx, %%bx" ::);
+    // put_str(name);
+    // put_str("\n");
+    // put_str(func_arg);
+    // put_str("\n");
     struct task_struct* thread = get_kernel_pages(1);
     init_thread(thread, name, prio);
     thread_create(thread, func, func_arg);
     asm volatile("movl %0, %%esp; pop %%ebp; pop %%ebx; \
-        pop %%edi; pop %%esi; ret"::"g"(thread->self_kernel_stack) : "memory");
+        pop %%edi; pop %%esi; ret" : : "g" (thread->self_kernel_stack) : "memory");
     return thread;
 }

@@ -89,7 +89,7 @@ struct thread_stack {
  */
 struct task_struct {
     // 内核线程所用的内核栈
-    uint32_t self_kernel_stack;
+    uint32_t* self_kernel_stack;
     // 状态
     enum task_status status;
     // 优先级
@@ -98,5 +98,9 @@ struct task_struct {
     // 栈的边界标记，用于检测栈的溢出
     uint32_t stack_magic;
 };
+
+void thread_create(struct task_struct* pthread, thread_func func, void* func_arg);
+void init_thread(struct task_struct* pthread, char* name, int prio);
+struct task_struct* thread_start(char* name, int prio, thread_func func, void* func_arg);
 
 #endif  // THREAD_THREAD_H_

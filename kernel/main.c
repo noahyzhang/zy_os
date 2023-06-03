@@ -2,14 +2,15 @@
 #include "kernel/init.h"
 #include "kernel/debug.h"
 #include "kernel/memory.h"
+#include "thread/thread.h"
 
-void kernel_thread_func(void* arg) {
-    char* para = arg;
-    for (;;) {
-        put_str(para);
-        put_str("\n");
-    }
-}
+void kernel_thread_func(void* arg);
+
+/**
+ * 注意 main 函数一定要是 main.c 文件的第一个函数，因为我们设定的从 0xc0001500 开始执行
+ * 一定要让 main 函数位于 0xc0001500 地址处
+ * 
+ */
 
 int main(void) {
     // 测试 print 函数
@@ -45,9 +46,24 @@ int main(void) {
 
     // 测试创建线程
     init_all();
-    thread_start("kernel_thread_a", 31, kernel_thread_func, "arg1");
+    // asm volatile ("xchg %%bx, %%bx" ::);
+    // put_str("kernel_thread_func\n");
+    thread_start("kernel_thread_func", 100, kernel_thread_func, "arg1");
 
     for (;;) {}
 
     return 0;
 }
+
+void kernel_thread_func(void* arg) {
+    char* para = (char*)arg;
+    // put_str("run kernel_thread_func start\n");
+    // put_str(para);
+    // put_str("\n");
+    // put_str("end run kernel_thread_func\n");
+    for (;;) {
+        put_str(para);
+        put_str("\n");
+    }
+}
+
