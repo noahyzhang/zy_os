@@ -14,6 +14,11 @@
 
 #include "kernel/global.h"
 
+// elem_ptr 是待转换的地址
+// struct_member_name 是 elem_ptr 所属结构体的类型
+// elem2entry 的作用是将指针 elem_ptr 转换成 struct_type 类型的指针
+// 原理是用 elem_ptr 的地址减去 elem_ptr 在结构体 struct_type 中的偏移量，此地址差便是 struct_type 的起始地址
+// 最后再将此地址差转换为 struct_type 指针类型
 #define offset(struct_type, member) (int)(&((struct_type*)0)->member)
 #define elem2entry(struct_type, struct_member_name, elem_ptr) \
         (struct_type*)((int)elem_ptr - offset(struct_type, struct_member_name))

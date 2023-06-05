@@ -13,8 +13,9 @@ CFLAGS = -m32 -Wall $(LIB) -c -fno-builtin -fstack-protector -W -Wstrict-prototy
 LDFLAGS = -melf_i386 -Ttext $(ENTRY_POINT) -e main
 OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/init.o $(BUILD_DIR)/interrupt.o \
 	$(BUILD_DIR)/timer.o $(BUILD_DIR)/kernel.o $(BUILD_DIR)/print.o \
-	$(BUILD_DIR)/debug.o $(BUILD_DIR)/string.o $(BUILD_DIR)/bitmap.o \
-	$(BUILD_DIR)/memory.o $(BUILD_DIR)/thread.o 
+	$(BUILD_DIR)/debug.o $(BUILD_DIR)/memory.o $(BUILD_DIR)/bitmap.o \
+	$(BUILD_DIR)/string.o $(BUILD_DIR)/thread.o $(BUILD_DIR)/list.o  \
+	$(BUILD_DIR)/switch.o
 
 ##############     MBR代码编译     ############### 
 $(BUILD_DIR)/mbr.bin: boot/mbr.s
@@ -60,10 +61,16 @@ $(BUILD_DIR)/thread.o: thread/thread.c thread/thread.h \
 		lib/stdint.h lib/string.c kernel/global.h kernel/memory.h
 	$(CC) $(CFLAGS) $< -o $@
 
+$(BUILD_DIR)/list.o: lib/kernel/list.c lib/kernel/list.h \
+		kernel/global.h kernel/interrupt.h
+	$(CC) $(CFLAGS) $< -o $@
+
 ##############    汇编代码编译    ###############
 $(BUILD_DIR)/kernel.o: kernel/kernel.s
 	$(AS) $(ASFLAGS) $< -o $@
 $(BUILD_DIR)/print.o: lib/kernel/print.s
+	$(AS) $(ASFLAGS) $< -o $@
+$(BUILD_DIR)/switch.o: thread/switch.s
 	$(AS) $(ASFLAGS) $< -o $@
 
 ##############    链接所有目标文件    #############
@@ -90,4 +97,4 @@ clean:
 
 build: $(BUILD_DIR)/kernel.bin $(BUILD_DIR)/mbr.bin $(BUILD_DIR)/loader.bin
 
-all: clean mk_dir mk_img build hd
+all: mk_dir mk_img build hd

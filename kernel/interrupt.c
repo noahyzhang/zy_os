@@ -94,7 +94,7 @@ static void general_intr_handler(uint8_t vec_nr) {
 	// 如果为 PageFault，将缺失的地址打印出来并悬停
 	if (vec_nr == 14) {
 		int page_fault_vaddr = 0;
-		asm ("movl %%cr2, %0" : "=r" (page_fault_vaddr));)
+		asm ("movl %%cr2, %0" : "=r" (page_fault_vaddr));
 		put_str("page fault addr is ");
 		put_int(page_fault_vaddr);
 		put_str("\n");
@@ -156,39 +156,58 @@ enum intr_status intr_enable() {
 }
 
 /* 关中断,并且返回关中断前的状态 */
-enum intr_status intr_disable() {     
-   enum intr_status old_status;
-   if (INTR_ON == intr_get_status()) {
-      old_status = INTR_ON;
-      asm volatile("cli" : : : "memory"); // 关中断,cli指令将IF位置0
-      return old_status;
-   } else {
-      old_status = INTR_OFF;
-      return old_status;
-   }
+enum intr_status intr_disable() {
+    enum intr_status old_status;
+    if (INTR_ON == intr_get_status()) {
+        old_status = INTR_ON;
+        asm volatile("cli" : : : "memory"); // 关中断,cli指令将IF位置0
+        return old_status;
+    } else {
+        old_status = INTR_OFF;
+        return old_status;
+    }
 }
 
 /* 将中断状态设置为status */
 enum intr_status intr_set_status(enum intr_status status) {
-   return status & INTR_ON ? intr_enable() : intr_disable();
+    return status & INTR_ON ? intr_enable() : intr_disable();
 }
 
-/* 获取当前中断状态 */
+/**
+ * @brief 获取当前中断状态
+ * 
+ * @return enum intr_status 
+ */
 enum intr_status intr_get_status() {
-   uint32_t eflags = 0; 
-   GET_EFLAGS(eflags);
-   return (EFLAGS_IF & eflags) ? INTR_ON : INTR_OFF;
+    uint32_t eflags = 0;
+    GET_EFLAGS(eflags);
+    return (EFLAGS_IF & eflags) ? INTR_ON : INTR_OFF;
 }
 
-/*完成有关中断的所有初始化工作*/
-void idt_init() {
-   put_str("idt_init start\n");
-   idt_desc_init();	   // 初始化中断描述符表
-   exception_init();	   // 异常名初始化并注册通常的中断处理函数
-   pic_init();		   // 初始化8259A
+/**
+ * @brief 注册中断处理程序
+ * 
+ * @param vector_no 
+ * @param function 
+ */
+void register_handler(uint8_t vector_no, intr_handler function) {
+    // idt_table 数组中的函数是在进入中断后根据中断向量号调用的
+    // kernel/kernel.s 中的 "call[idt_table + %1*4]"
+    idt_table[vector_no] = function;
+}
 
-   /* 加载idt */
-   uint64_t idt_operand = ((sizeof(idt) - 1) | ((uint64_t)(uint32_t)idt << 16));
-   asm volatile("lidt %0" : : "m" (idt_operand));
-   put_str("idt_init done\n");
+/**
+ * @brief 完成有关中断的所有初始化工作
+ * 
+ */
+void idt_init() {
+    put_str("idt_init start\n");
+    idt_desc_init();	   // 初始化中断描述符表
+    exception_init();	   // 异常名初始化并注册通常的中断处理函数
+    pic_init();		   // 初始化8259A
+
+    /* 加载idt */
+    uint64_t idt_operand = ((sizeof(idt) - 1) | ((uint64_t)(uint32_t)idt << 16));
+    asm volatile("lidt %0" : : "m" (idt_operand));
+    put_str("idt_init done\n");
 }

@@ -15,6 +15,9 @@
 #include "lib/stdint.h"
 #include "lib/kernel/list.h"
 
+// task_struct 中 stack_magic 的魔数值
+#define TASK_STACK_MAGIC_VALUE (0x19971216)
+
 // 函数类型
 typedef void thread_func(void* arg);
 
@@ -93,9 +96,8 @@ struct task_struct {
     uint32_t* self_kernel_stack;
     // 状态
     enum task_status status;
-    // 优先级
-    uint8_t priority;
     char name[16];
+    // 优先级
     uint8_t priority;
     // 每次在处理器上执行的时钟滴答数
     uint8_t ticks;
@@ -117,5 +119,8 @@ struct task_struct {
 void thread_create(struct task_struct* pthread, thread_func func, void* func_arg);
 void init_thread(struct task_struct* pthread, char* name, int prio);
 struct task_struct* thread_start(char* name, int prio, thread_func func, void* func_arg);
+struct task_struct* running_thread(void);
+void schedule(void);
+void thread_init(void);
 
 #endif  // THREAD_THREAD_H_
