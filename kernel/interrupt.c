@@ -73,12 +73,39 @@ static void idt_desc_init(void) {
 
 /* 通用的中断处理函数,一般用在异常出现时的处理 */
 static void general_intr_handler(uint8_t vec_nr) {
-   if (vec_nr == 0x27 || vec_nr == 0x2f) {	// 0x2f是从片8259A上的最后一个irq引脚，保留
-      return;		//IRQ7和IRQ15会产生伪中断(spurious interrupt),无须处理。
-   }
-   put_str("int vector: 0x");
-   put_int(vec_nr);
-   put_char('\n');
+	if (vec_nr == 0x27 || vec_nr == 0x2f) {	// 0x2f是从片8259A上的最后一个irq引脚，保留
+		return;		//IRQ7和IRQ15会产生伪中断(spurious interrupt),无须处理。
+	}
+	// 将光标置为 0，从屏幕左上角清出一片打印异常情况的区域，方便查看
+	set_cursor(0);
+	int cursor_pos = 0;
+	// 320 表示每行 80 个字符，一共 4 行
+	while (cursor_pos < 320) {
+		put_char(' ');
+		cursor_pos++;
+	}
+	// 重置光标为屏幕左上角
+	set_cursor(0);
+	put_str("!!!   exception message begin   !!!\n");
+	// 从第 2 行的第 8 个字符开始打印
+	set_cursor(88);
+	put_str(intr_name[vec_nr]);
+	put_str("\n");
+	// 如果为 PageFault，将缺失的地址打印出来并悬停
+	if (vec_nr == 14) {
+		int page_fault_vaddr = 0;
+		asm ("movl %%cr2, %0" : "=r" (page_fault_vaddr));)
+		put_str("page fault addr is ");
+		put_int(page_fault_vaddr);
+		put_str("\n");
+	}
+	put_str("!!!   exception message end   !!!\n");
+	// 能进入中断处理程序就表示已经处于关中断情况下，不会出现调度进程的情况。因此如下死循环不会被中断
+	while (true) {}
+
+	// put_str("int vector: 0x");
+	// put_int(vec_nr);
+	// put_char('\n');
 }
 
 /* 完成一般中断处理函数注册及异常名称注册 */

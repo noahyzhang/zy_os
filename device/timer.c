@@ -11,6 +11,18 @@
 #define READ_WRITE_LATCH   3
 #define PIT_CONTROL_PORT   0x43
 
+// 内核自中断开启以来总共的滴答数
+uint32_t ticks;
+
+/**
+ * @brief 时钟中断的处理函数
+ * 
+ */
+static void intr_timer_handler() {
+   struct task_struct* cur_thread = running_thread();
+   ASSERT(cur_thread->elapsed_ticks++)
+}
+
 /* 把操作的计数器counter_no、读写锁属性rwl、计数器模式counter_mode写入模式控制寄存器并赋予初始值counter_value */
 static void frequency_set(uint8_t counter_port, \
 			  uint8_t counter_no, \
