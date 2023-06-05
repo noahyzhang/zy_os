@@ -136,6 +136,46 @@ void schedule(void) {
     return;
 }
 
+/**
+ * @brief 当前线程将自己阻塞，并更新状态为 stat
+ * 
+ * @param stat 
+ */
+void thread_block(enum task_status stat) {
+    // 只有 stat 取如下三种状态才不会被调度
+    ASSERT(((stat == TASK_BLOCKED) || (stat == TASK_WAITING) || (stat == TASK_HANGING)));
+    enum intr_status old_status = intr_disable();
+    struct task_struct* cur_thread = running_thread();
+    // 置其状态为 stat
+    cur_thread->status = stat;
+    // 将当前线程换下处理器，由于不会将此线程加入到就绪队列，所以不会被调度
+    schedule();
+    // 待当前线程被解除阻塞后才继续运行下面的 intr_set_status
+    intr_set_status(old_status);
+}
+
+/**
+ * @brief 将线程 pthread 解除阻塞
+ * 
+ * @param pthread 
+ */
+void thread_unblock(struct task_struct* pthread) {
+    enum intr_status old_status = intr_disable();
+    ASSERT(((pthread->status == TASK_BLOCKED) || (pthread->status == TASK_WAITING)
+        || (pthread->status == TASK_HANGING)));
+    if (pthread->status != TASK_READY) {
+        // ASSERT 是调试阶段用的，运行阶段我们用 PANIC 返回错误信息
+        ASSERT(!elem_find(&thread_ready_list, &pthread->general_tag));
+        if (elem_find(&thread_ready_list, &pthread->general_tag)) {
+            PANIC("thread_unlock: blocked thread in ready_list\n");
+        }
+        // 放到队列的最前面，让他尽快得到调度
+        list_push(&thread_ready_list, &pthread->general_tag);
+        pthread->status = TASK_READY;
+    }
+    intr_set_status(old_status);
+}
+
 void thread_init(void) {
     put_str("thread_init start\n");
     list_init(&thread_ready_list);

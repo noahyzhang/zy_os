@@ -4,6 +4,7 @@
 #include "kernel/memory.h"
 #include "thread/thread.h"
 #include "kernel/interrupt.h"
+#include "device/console.h"
 
 /**
  * 注意 main 函数一定要是 main.c 文件的第一个函数，因为我们设定的从 0xc0001500 开始执行
@@ -54,13 +55,22 @@ int main(void) {
     // thread_start("kernel_thread_func", 100, kernel_thread_func, "arg1");
 
     // 测试线程调度
+    // init_all();
+    // thread_start("k_thread_a", 50, k_thread_a, "argA");
+    // thread_start("k_thread_b", 10, k_thread_b, "argB");
+    // // 打开中断，使时钟中断起作用
+    // intr_enable();
+    // for (;;) {
+    //     put_str("main thread\n");
+    // }
+
+    // 测试加锁后的线程打印
     init_all();
-    thread_start("k_thread_a", 50, k_thread_a, "argA");
-    thread_start("k_thread_b", 10, k_thread_b, "argB");
-    // 打开中断，使时钟中断起作用
+    thread_start("k_thread_a", 50, k_thread_a, "arg A");
+    thread_start("k_thread_b", 10, k_thread_b, "argB ");
     intr_enable();
     for (;;) {
-        put_str("main thread\n");
+        console_put_str("main thread ");
     }
 
     return 0;
@@ -74,24 +84,26 @@ void kernel_thread_func(void* arg) {
     // put_str("end run kernel_thread_func\n");
     for (;;) {
         put_str(para);
-        put_str("\n");
+        // put_str("\n");
     }
 }
 
 void k_thread_a(void* arg) {
     char* para = (char*)arg;
     for (;;) {
-        put_str("k_thread_a: ");
-        put_str(para);
-        put_str("\n");
+        // put_str("k_thread_a: ");
+        // put_str(para);
+        // put_str("\n");
+        console_put_str(para);
     }
 }
 
 void k_thread_b(void* arg) {
     char* para = (char*)arg;
     for (;;) {
-        put_str("k_thread_b: ");
-        put_str(para);
-        put_str("\n");
+        // put_str("k_thread_b: ");
+        // put_str(para);
+        // put_str("\n");
+        console_put_str(para);
     }
 }
