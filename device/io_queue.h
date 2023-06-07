@@ -40,6 +40,7 @@ struct io_queue_t {
 };
 
 void io_queue_init(struct io_queue_t* ioq);
+bool ioq_empty(struct io_queue_t* ioq);
 bool ioq_full(struct io_queue_t* ioq);
 char ioq_getchar(struct io_queue_t* ioq);
 void ioq_putchar(struct io_queue_t* ioq, char byte);

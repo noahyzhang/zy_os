@@ -5,6 +5,8 @@
 #include "thread/thread.h"
 #include "kernel/interrupt.h"
 #include "device/console.h"
+#include "device/io_queue.h"
+#include "device/keyboard.h"
 
 /**
  * 注意 main 函数一定要是 main.c 文件的第一个函数，因为我们设定的从 0xc0001500 开始执行
@@ -12,9 +14,10 @@
  * 
  */
 
-void kernel_thread_func(void* arg);
+void kernel_thread_func(void*);
 void k_thread_a(void*);
 void k_thread_b(void*);
+void thread_consumer(void*);
 
 int main(void) {
     // 测试 print 函数
@@ -75,11 +78,29 @@ int main(void) {
 
     // 测试键盘中断
     // 任意按键，即可触发通路和断路
+    // init_all();
+    // intr_enable();
+
+    // 测试键盘的环形缓冲区
     init_all();
+    thread_start("consumer_a", 100, thread_consumer, " A_");
+    thread_start("consumer_b", 100, thread_consumer, " B_");
     intr_enable();
     for (;;) {}
 
     return 0;
+}
+
+void thread_consumer(void* arg) {
+    for (;;) {
+        enum intr_status old_status = intr_disable();
+        if (!ioq_empty(&kbd_buf)) {
+            console_put_str(arg);
+            char byte = ioq_getchar(&kbd_buf);
+            console_put_char(byte);
+        }
+        intr_set_status(old_status);
+    }
 }
 
 void kernel_thread_func(void* arg) {

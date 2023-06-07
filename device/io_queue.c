@@ -44,7 +44,7 @@ bool ioq_full(struct io_queue_t* ioq) {
  * @return true 
  * @return false 
  */
-static bool ioq_empty(struct io_queue_t* ioq) {
+bool ioq_empty(struct io_queue_t* ioq) {
     ASSERT(intr_get_status() == INTR_OFF);
     // 队首位置和队尾位置相等，则说明队列为空
     return ioq->head == ioq->tail;

@@ -3,6 +3,7 @@
 #include "kernel/interrupt.h"
 #include "lib/kernel/io.h"
 #include "kernel/global.h"
+#include "device/io_queue.h"
 
 // 键盘 buffer 寄存器端口号为 0x60
 #define KBD_BUF_PORT 0x60
@@ -39,6 +40,9 @@
 // 记录相应键是否按下的状态
 // ext_scan_code 用于记录 make_code 是否以 0xe0 开头
 static bool ctrl_status, shift_status, alt_status, caps_lock_status, ext_scan_code;
+
+// 键盘缓冲区
+struct io_queue_t kbd_buf;
 
 // 以通码 make_code 为索引的二维数组
 static char keymap[][2] = {
@@ -205,11 +209,17 @@ static void intr_keyboard_handler(void) {
         if (cur_char) {
             // TODO(noahyzhang): tab 键为什么输出的是字符 'o'
             // TODO(noahyzhang): esc 键输出的 '<-' 符号
-            if (0x0f == index) {
-                put_char(tab);
-                put_str("\n");
+            // if (0x0f == index) {
+            //     put_char(tab);
+            //     put_str("\n");
+            // }
+            // put_char(cur_char);
+            // 如果 kbd_buf 中未满并且待加入的 cur_char 不为 0，则将其加入到缓冲区 kbd_buf 中
+            if (!ioq_full(&kbd_buf)) {
+                // 用来调试
+                // put_char(cur_char);
+                ioq_putchar(&kbd_buf, cur_char);
             }
-            put_char(cur_char);
             return;
         }
 
@@ -237,6 +247,7 @@ static void intr_keyboard_handler(void) {
  */
 void keyboard_init(void) {
     put_str("keyboard init start\n");
+    io_queue_init(&kbd_buf);
     // 注册键盘中断处理程序
     register_handler(0x21, intr_keyboard_handler);
     put_str("keyboard init end\n");

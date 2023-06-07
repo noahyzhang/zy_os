@@ -12,6 +12,10 @@
 #ifndef DEVICE_KEYBOARD_H_
 #define DEVICE_KEYBOARD_H_
 
+#include "device/io_queue.h"
+
+extern struct io_queue_t kbd_buf;
+
 void keyboard_init(void);
 
 #endif  // DEVICE_KEYBOARD_H_
