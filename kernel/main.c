@@ -65,13 +65,19 @@ int main(void) {
     // }
 
     // 测试加锁后的线程打印
+    // init_all();
+    // thread_start("k_thread_a", 50, k_thread_a, "arg A");
+    // thread_start("k_thread_b", 10, k_thread_b, "argB ");
+    // intr_enable();
+    // for (;;) {
+    //     console_put_str("main thread ");
+    // }
+
+    // 测试键盘中断
+    // 任意按键，即可触发通路和断路
     init_all();
-    thread_start("k_thread_a", 50, k_thread_a, "arg A");
-    thread_start("k_thread_b", 10, k_thread_b, "argB ");
     intr_enable();
-    for (;;) {
-        console_put_str("main thread ");
-    }
+    for (;;) {}
 
     return 0;
 }
