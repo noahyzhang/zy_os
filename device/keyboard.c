@@ -12,9 +12,13 @@
  * 
  */
 static void intr_keyboard_handler(void) {
-    put_str("receive keyboard interrupt\n");
+    // put_str("receive keyboard interrupt\n");
     // 注意：必须要读取输出缓冲区寄存器，否则 8042 不再继续相应键盘中断
-    inb(KBD_BUF_PORT);
+    // inb 返回的是从端口读取的数据
+    uint8_t scan_code = inb(KBD_BUF_PORT);
+    put_str("receive keyboard scan_code:|");
+    put_int(scan_code);
+    put_str("|\n");
     return;
 }
 
