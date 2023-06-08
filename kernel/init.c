@@ -6,6 +6,7 @@
 #include "thread/thread.h"
 #include "device/console.h"
 #include "device/keyboard.h"
+#include "user_process/tss.h"
 
 /*负责初始化所有模块 */
 void init_all() {
@@ -16,4 +17,6 @@ void init_all() {
     thread_init();  // 初始化线程
     console_init();  // 初始化终端
     keyboard_init();  // 初始化键盘
+    tss_init();  // 初始化 TSS
+    // asm volatile ("xchg %%bx, %%bx" ::);
 }
