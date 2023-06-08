@@ -14,6 +14,7 @@
 
 #include "lib/stdint.h"
 #include "lib/kernel/list.h"
+#include "kernel/memory.h"
 
 // task_struct 中 stack_magic 的魔数值
 #define TASK_STACK_MAGIC_VALUE (0x19971216)
@@ -111,6 +112,8 @@ struct task_struct {
     // 进程自己页表的虚拟地址
     // 如果是线程，则此字段为 NULL
     uint32_t* pg_dir;
+    // 用户进程的虚拟地址
+    struct virtual_addr user_process_vaddr;
     // 栈的边界标记，用于检测栈的溢出
     // 这个字段因为要作为边界标记，所以必须放在结构体的末尾
     uint32_t stack_magic;
