@@ -9,10 +9,12 @@
 #define PIC_S_CTRL 0xa0	       // 从片的控制端口是0xa0
 #define PIC_S_DATA 0xa1	       // 从片的数据端口是0xa1
 
-#define IDT_DESC_CNT 0x30      // 目前总共支持的中断数
+#define IDT_DESC_CNT 0x81      // 目前总共支持的中断数
 
 #define EFLAGS_IF   0x00000200       // eflags寄存器中的if位为1
 #define GET_EFLAGS(EFLAG_VAR) asm volatile("pushfl; popl %0" : "=g" (EFLAG_VAR))
+
+extern uint32_t syscall_handler(void);
 
 /*中断门描述符结构体*/
 struct gate_desc {
@@ -68,57 +70,61 @@ static void pic_init(void) {
 
 /* 创建中断门描述符 */
 static void make_idt_desc(struct gate_desc* p_gdesc, uint8_t attr, intr_handler function) { 
-   p_gdesc->func_offset_low_word = (uint32_t)function & 0x0000FFFF;
-   p_gdesc->selector = SELECTOR_K_CODE;
-   p_gdesc->dcount = 0;
-   p_gdesc->attribute = attr;
-   p_gdesc->func_offset_high_word = ((uint32_t)function & 0xFFFF0000) >> 16;
+    p_gdesc->func_offset_low_word = (uint32_t)function & 0x0000FFFF;
+    p_gdesc->selector = SELECTOR_K_CODE;
+    p_gdesc->dcount = 0;
+    p_gdesc->attribute = attr;
+    p_gdesc->func_offset_high_word = ((uint32_t)function & 0xFFFF0000) >> 16;
 }
 
 /*初始化中断描述符表*/
 static void idt_desc_init(void) {
-   int i;
-   for (i = 0; i < IDT_DESC_CNT; i++) {
-      make_idt_desc(&idt[i], IDT_DESC_ATTR_DPL0, intr_entry_table[i]); 
-   }
-   put_str("   idt_desc_init done\n");
+    int i, last_index = IDT_DESC_CNT - 1;
+    for (i = 0; i < IDT_DESC_CNT; i++) {
+        make_idt_desc(&idt[i], IDT_DESC_ATTR_DPL0, intr_entry_table[i]);
+    }
+    // 系统调用的中断号是 0x80
+    // 单独处理系统调用，系统调用对应的中断门 dpl 为 3
+    // 中断处理程序为单独的 syscall_handler
+    make_idt_desc(&idt[last_index], IDT_DESC_ATTR_DPL3, syscall_handler);
+    put_str("   idt_desc_init done\n");
 }
 
 /* 通用的中断处理函数,一般用在异常出现时的处理 */
 static void general_intr_handler(uint8_t vec_nr) {
-	if (vec_nr == 0x27 || vec_nr == 0x2f) {	// 0x2f是从片8259A上的最后一个irq引脚，保留
-		return;		//IRQ7和IRQ15会产生伪中断(spurious interrupt),无须处理。
-	}
-	// 将光标置为 0，从屏幕左上角清出一片打印异常情况的区域，方便查看
-	set_cursor(0);
-	int cursor_pos = 0;
-	// 320 表示每行 80 个字符，一共 4 行
-	while (cursor_pos < 320) {
-		put_char(' ');
-		cursor_pos++;
-	}
-	// 重置光标为屏幕左上角
-	set_cursor(0);
-	put_str("!!!   exception message begin   !!!\n");
-	// 从第 2 行的第 8 个字符开始打印
-	set_cursor(88);
-	put_str(intr_name[vec_nr]);
-	put_str("\n");
-	// 如果为 PageFault，将缺失的地址打印出来并悬停
-	if (vec_nr == 14) {
-		int page_fault_vaddr = 0;
-		asm ("movl %%cr2, %0" : "=r" (page_fault_vaddr));
-		put_str("page fault addr is ");
-		put_int(page_fault_vaddr);
-		put_str("\n");
-	}
-	put_str("!!!   exception message end   !!!\n");
-	// 能进入中断处理程序就表示已经处于关中断情况下，不会出现调度进程的情况。因此如下死循环不会被中断
-	while (true) {}
+    if (vec_nr == 0x27 || vec_nr == 0x2f) {	// 0x2f是从片8259A上的最后一个irq引脚，保留
+        return;		//IRQ7和IRQ15会产生伪中断(spurious interrupt),无须处理。
+    }
+    // 将光标置为 0，从屏幕左上角清出一片打印异常情况的区域，方便查看
+    set_cursor(0);
+    int cursor_pos = 0;
+    // 320 表示每行 80 个字符，一共 4 行
+    while (cursor_pos < 320) {
+        put_char(' ');
+        cursor_pos++;
+    }
+    // 重置光标为屏幕左上角
+    set_cursor(0);
+    put_str("!!!   exception message begin   !!!\n");
+    // 从第 2 行的第 8 个字符开始打印
+    set_cursor(88);
+    put_str(intr_name[vec_nr]);
+    put_str("\n");
+    // 如果为 PageFault，将缺失的地址打印出来并悬停
+    if (vec_nr == 14) {
+        int page_fault_vaddr = 0;
+        asm ("movl %%cr2, %0" : "=r" (page_fault_vaddr));
+        put_str("page fault addr is ");
+        put_int(page_fault_vaddr);
+        put_str("\n");
+    }
+    put_str("!!!   exception message end   !!!\n");
+    // 能进入中断处理程序就表示已经处于关中断情况下，不会出现调度进程的情况。因此如下死循环不会被中断
+    while (true) {}
 
-	// put_str("int vector: 0x");
-	// put_int(vec_nr);
-	// put_char('\n');
+    // put_str("int vector: 0x");
+    // put_int(vec_nr);
+    // put_char('\n');
 }
 
 /* 完成一般中断处理函数注册及异常名称注册 */

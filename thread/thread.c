@@ -6,6 +6,7 @@
 #include "kernel/interrupt.h"
 #include "kernel/debug.h"
 #include "user_process/process.h"
+#include "thread/sync.h"
 
 #define MAIN_THREAD_PRIO_VALUE (31)
 
@@ -15,6 +16,8 @@ struct task_struct* main_thread;
 struct list thread_ready_list;
 // 所有任务队列，存储包括就绪的、阻塞的、正在执行的的线程
 struct list thread_all_list;
+// 分配 pid 锁
+struct lock pid_lock;
 // 用于保存队列中的线程节点
 static struct list_elem* thread_tag;
 
@@ -32,6 +35,19 @@ static void kernel_thread(thread_func* func, void* func_arg) {
     // 执行 function 前要开中断，避免后面的时钟中断被屏蔽，而无法调度其他线程
     intr_enable();
     func(func_arg);
+}
+
+/**
+ * @brief 分配 pid
+ * 
+ * @return pid_t 
+ */
+static pid_t allocate_pid(void) {
+    static pid_t next_pid = 0;
+    lock_acquire(&pid_lock);
+    next_pid++;
+    lock_release(&pid_lock);
+    return next_pid;
 }
 
 void thread_create(struct task_struct* pthread, thread_func func, void* func_arg) {
@@ -52,6 +68,7 @@ void thread_create(struct task_struct* pthread, thread_func func, void* func_arg
 // 初始化线程基本信息
 void init_thread(struct task_struct* pthread, char* name, int prio) {
     memset(pthread, 0, sizeof(*pthread));
+    pthread->pid = allocate_pid();
     strncpy(pthread->name, name, strlen(name));
     if (pthread == main_thread) {
         // main 函数也封装成一个线程，并且他一直是运行的，故将其直接设置为 TASK_RUNNING 的状态
@@ -183,6 +200,7 @@ void thread_init(void) {
     put_str("thread_init start\n");
     list_init(&thread_ready_list);
     list_init(&thread_all_list);
+    lock_init(&pid_lock);
     // 将当前 main 函数创建为线程
     make_main_thread();
     put_str("thread_init end\n");

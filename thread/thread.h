@@ -21,6 +21,7 @@
 
 // 函数类型
 typedef void thread_func(void* arg);
+typedef int16_t pid_t;
 
 // 进程或者线程的状态
 enum task_status {
@@ -95,6 +96,7 @@ struct thread_stack {
 struct task_struct {
     // 内核线程所用的内核栈
     uint32_t* self_kernel_stack;
+    pid_t pid;
     // 状态
     enum task_status status;
     char name[16];

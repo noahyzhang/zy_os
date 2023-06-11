@@ -8,6 +8,8 @@
 #include "device/io_queue.h"
 #include "device/keyboard.h"
 #include "user_process/process.h"
+#include "lib/user/syscall.h"
+#include "user_process/syscall-init.h"
 
 /**
  * 注意 main 函数一定要是 main.c 文件的第一个函数，因为我们设定的从 0xc0001500 开始执行
@@ -22,6 +24,7 @@ void thread_consumer(void*);
 void u_process_a(void);
 void u_process_b(void);
 int test_var_a = 0, test_var_b = 0;
+int process_a_pid = 0, process_b_pid = 0;
 
 int main(void) {
     // 测试 print 函数
@@ -92,12 +95,24 @@ int main(void) {
     // intr_enable();
 
     // 测试用户进程
+    // init_all();
+    // thread_start("k_thread_a", 31, k_thread_a, "argA ");
+    // thread_start("k_thread_b", 31, k_thread_b, "argB ");
+    // process_execute(u_process_a, "user_prog_a");
+    // process_execute(u_process_b, "user_prog_b");
+    // intr_enable();
+
+    // 测试第一个系统调用 getpid()
     init_all();
-    thread_start("k_thread_a", 31, k_thread_a, "argA ");
-    thread_start("k_thread_b", 31, k_thread_b, "argB ");
     process_execute(u_process_a, "user_prog_a");
     process_execute(u_process_b, "user_prog_b");
+
     intr_enable();
+    console_put_str(" main_pid: 0x");
+    console_put_int(sys_getpid());
+    console_put_str("\n");
+    thread_start("k_thread_a", 30, k_thread_a, "argA ");
+    thread_start("t_thread_b", 31, k_thread_b, "argB ");
     for (;;) {}
 
     return 0;
@@ -128,37 +143,57 @@ void kernel_thread_func(void* arg) {
 }
 
 void k_thread_a(void* arg) {
-    // char* para = (char*)arg;
-    for (;;) {
+    char* para = (char*)arg;
+    console_put_str(" thread_a_pid: 0x");
+    console_put_int(sys_getpid());
+    console_put_char('\n');
+    console_put_str(" process_a_pid: 0x");
+    console_put_int(process_a_pid);
+    console_put_char('\n');
+    for (;;) {}
+    // for (;;) {
         // put_str("k_thread_a: ");
         // put_str(para);
         // put_str("\n");
-        console_put_str("v_a: 0x");
-        console_put_int(test_var_a);
+        // console_put_str("v_a: 0x");
+        // console_put_int(test_var_a);
         // console_put_str(para);
-    }
+    // }
 }
 
 void k_thread_b(void* arg) {
-    // char* para = (char*)arg;
-    for (;;) {
+    char* para = (char*)arg;
+    console_put_str(" thread_b_pid: 0x");
+    // 内核线程通过 sys_getpid() 获取 PID
+    console_put_int(sys_getpid());
+    console_put_char('\n');
+    console_put_str(" process_b_pid: 0x");
+    console_put_int(process_b_pid);
+    console_put_char('\n');
+    for (;;) {}
+    // for (;;) {
         // put_str("k_thread_b: ");
         // put_str(para);
         // put_str("\n");
-        console_put_str(" v_b: 0x");
-        console_put_int(test_var_b);
+        // console_put_str(" v_b: 0x");
+        // console_put_int(test_var_b);
         // console_put_str(para);
-    }
+    // }
 }
 
 void u_process_a(void) {
-    for (;;) {
-        test_var_a++;
-    }
+    // 用户进程通过 getpid() 来获取进程 PID
+    process_a_pid = getpid();
+    for (;;) {}
+    // for (;;) {
+    //     test_var_a++;
+    // }
 }
 
 void u_process_b(void) {
-    for (;;) {
-        test_var_b++;
-    }
+    process_b_pid = getpid();
+    for (;;) {}
+    // for (;;) {
+    //     test_var_b++;
+    // }
 }

@@ -57,13 +57,13 @@ static void* vaddr_get(enum pool_flags pf, uint32_t pg_cnt) {
     uint32_t cnt = 0;
     // 内核内存池
     if (pf == PF_KERNEL) {
-        put_str("vaddr_get kernel_vaddr.vaddr_bitmap.bits: ");
-        put_int((int)kernel_vaddr.vaddr_bitmap.bits);
-        put_str("\n");
+        // put_str("vaddr_get kernel_vaddr.vaddr_bitmap.bits: ");
+        // put_int((int)kernel_vaddr.vaddr_bitmap.bits);
+        // put_str("\n");
 
-        put_str("vaddr_get kernel_vaddr.vaddr_bitmap.bmap_bytes_len :");
-        put_int(kernel_vaddr.vaddr_bitmap.bmap_bytes_len);
-        put_str("\n");
+        // put_str("vaddr_get kernel_vaddr.vaddr_bitmap.bmap_bytes_len :");
+        // put_int(kernel_vaddr.vaddr_bitmap.bmap_bytes_len);
+        // put_str("\n");
 
         bit_idx_start = bitmap_scan(&kernel_vaddr.vaddr_bitmap, pg_cnt);
         if (bit_idx_start == -1) {

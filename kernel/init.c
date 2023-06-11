@@ -7,6 +7,7 @@
 #include "device/console.h"
 #include "device/keyboard.h"
 #include "user_process/tss.h"
+#include "user_process/syscall-init.h"
 
 /*负责初始化所有模块 */
 void init_all() {
@@ -18,5 +19,6 @@ void init_all() {
     console_init();  // 初始化终端
     keyboard_init();  // 初始化键盘
     tss_init();  // 初始化 TSS
+    syscall_init();  // 初始化系统调用
     // asm volatile ("xchg %%bx, %%bx" ::);
 }
