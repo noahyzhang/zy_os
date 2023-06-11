@@ -16,7 +16,8 @@ OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/init.o $(BUILD_DIR)/interrupt.o \
 	$(BUILD_DIR)/debug.o $(BUILD_DIR)/memory.o $(BUILD_DIR)/bitmap.o \
 	$(BUILD_DIR)/string.o $(BUILD_DIR)/thread.o $(BUILD_DIR)/list.o  \
 	$(BUILD_DIR)/switch.o $(BUILD_DIR)/console.o $(BUILD_DIR)/sync.o  \
-	$(BUILD_DIR)/keyboard.o $(BUILD_DIR)/io_queue.o $(BUILD_DIR)/tss.o
+	$(BUILD_DIR)/keyboard.o $(BUILD_DIR)/io_queue.o $(BUILD_DIR)/tss.o \
+	$(BUILD_DIR)/process.o
 
 ##############     MBR代码编译     ############### 
 $(BUILD_DIR)/mbr.bin: boot/mbr.s
@@ -84,6 +85,11 @@ $(BUILD_DIR)/io_queue.o: device/io_queue.c device/io_queue.h \
 
 $(BUILD_DIR)/tss.o: user_process/tss.c user_process/tss.h \
 		thread/thread.h lib/stdint.h kernel/global.h lib/kernel/print.h lib/string.h
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/process.o: user_process/process.c user_process/process.h \
+		thread/thread.h lib/stdint.h kernel/global.h kernel/debug.h kernel/memory.h \
+		lib/kernel/list.h user_process/tss.h kernel/interrupt.h lib/string.h device/console.h
 	$(CC) $(CFLAGS) $< -o $@
 
 ##############    汇编代码编译    ###############
