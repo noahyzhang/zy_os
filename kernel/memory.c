@@ -38,9 +38,23 @@ struct pool {
     struct lock lock;
 };
 
+/**
+ * @brief 内存 arena 的元信息
+ * 
+ */
+struct arena {
+    // 此 arena 关联的 mem_block_desc
+    struct mem_block_desc* desc;
+    // large 为 true 时，cnt 表示页数
+    // 否则 cnt 表示空闲 mem_block 数量
+    uint32_t cnt;
+    bool large;
+};
+
+// 内核内存块描述符数组
+struct mem_block_desc k_block_descs[DESC_CNT];
 // 生成内核内存池和用户内存池
 struct pool kernel_pool, user_pool;
-
 // 此结构用来给内核分配虚拟地址
 struct virtual_addr kernel_vaddr;
 
@@ -347,10 +361,51 @@ static void mem_pool_init(uint32_t all_mem) {
     // asm volatile("xchg %%bx, %%bx"::);
 }
 
+/**
+ * @brief 初始化内存块元数据
+ *        因此我们的内存块规格：16，32，64，128，256，512，1024
+ * @param desc_array 
+ */
+void block_desc_init(struct mem_block_desc* desc_array) {
+    uint16_t desc_idx, block_size = 16;
+    // 初始化每个 mem_block_desc 描述符
+    for (desc_idx = 0; desc_idx < DESC_CNT; desc_idx++) {
+        desc_array[desc_idx].block_size = block_size;
+        // 初始化 arena 中的内存块数量
+        desc_array[desc_idx].blocks_per_arena = (PAGE_SIZE - sizeof(struct arena)) / block_size;
+        list_init(&desc_array[desc_idx].free_list);
+        // 更新为下一个规格内存块
+        block_size *= 2;
+    }
+}
+
+/**
+ * @brief 返回 arena 中第 idx 个内存块的地址
+ * 
+ * @param a 
+ * @param idx 
+ * @return struct mem_block* 
+ */
+static struct mem_block* arena2block(struct arena* a, uint32_t idx) {
+    return (struct mem_block*)((uint32_t)a + sizeof(struct arena) + idx * a->desc->block_size);
+}
+
+/**
+ * @brief 在堆中申请 size 字节内存
+ * 
+ * @param size 
+ * @return void* 
+ */
+void* sys_malloc(uint32_t size) {
+
+}
+
 void mem_init(void) {
     put_str("mem_init start\n");
     uint32_t mem_bytes_total = (*(uint32_t*)(0xb00));
     mem_pool_init(mem_bytes_total);
+    // 初始化 k_block_descs 数组
+    block_desc_init(k_block_descs);
     put_str("mem_init done\n");
 }
 

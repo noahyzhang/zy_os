@@ -116,6 +116,8 @@ struct task_struct {
     uint32_t* pg_dir;
     // 用户进程的虚拟地址
     struct virtual_addr user_process_vaddr;
+    // 用户进程内存块描述符
+    struct mem_block_desc u_block_desc[DESC_CNT];
     // 栈的边界标记，用于检测栈的溢出
     // 这个字段因为要作为边界标记，所以必须放在结构体的末尾
     uint32_t stack_magic;

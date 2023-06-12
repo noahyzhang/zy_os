@@ -23,6 +23,7 @@ void process_execute(void* process_name, char* name) {
     create_user_vaddr_bitmap(thread);
     thread_create(thread, start_process, process_name);
     thread->pg_dir = create_page_dir();
+    block_desc_init(thread->u_block_desc);
 
     // 关中断，将创建出来的 thread 插入到就绪队列中
     enum intr_status old_status = intr_disable();
