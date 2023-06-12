@@ -51,6 +51,7 @@ uint32_t vsprintf(char* str, const char* format, va_list ap) {
     const char* index_ptr = format;
     char index_char = *index_ptr;
     int32_t arg_int;
+    char* arg_str;
     for (; index_char;) {
         if (index_char != '%') {
             *(buf_ptr++) = index_char;
@@ -60,6 +61,27 @@ uint32_t vsprintf(char* str, const char* format, va_list ap) {
         // 得到 % 后面的字符
         index_char = *(++index_ptr);
         switch (index_char) {
+        case 's':
+            arg_str = va_arg(ap, char*);
+            uint32_t arg_str_len = strlen(arg_str);
+            strncpy(buf_ptr, arg_str, arg_str_len);
+            buf_ptr += arg_str_len;
+            index_char = *(++index_ptr);
+            break;
+        case 'c':
+            *(buf_ptr++) = va_arg(ap, char);
+            index_char = *(++index_ptr);
+            break;
+        case 'd':
+            arg_int = va_arg(ap, int);
+            // 如果是负数，将其转为正数后，再正数前面添加一个负号 '-'
+            if (arg_int < 0) {
+                arg_int = 0 - arg_int;
+                *buf_ptr++ = '-';
+            }
+            itoa(arg_int, &buf_ptr, 10);
+            index_char = *(++index_ptr);
+            break;
         case 'x':
             arg_int = va_arg(ap, int);
             itoa(arg_int, &buf_ptr, 16);
@@ -69,6 +91,23 @@ uint32_t vsprintf(char* str, const char* format, va_list ap) {
         }
     }
     return strlen(str);
+}
+
+/**
+ * @brief 将字符串输出到 buf 中
+ * 
+ * @param buf 
+ * @param format 
+ * @param ... 
+ * @return uint32_t 
+ */
+uint32_t sprintf(char* buf, const char* format, ...) {
+    va_list args;
+    uint32_t retval;
+    va_start(args, format);
+    retval = vsprintf(buf, format, args);
+    va_end(args);
+    return retval;
 }
 
 /**

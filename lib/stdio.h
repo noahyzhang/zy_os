@@ -17,6 +17,7 @@
 typedef char* va_list;
 
 uint32_t printf(const char* str, ...);
+uint32_t snprintf(char* buf, const char* format, ...);
 uint32_t vsprintf(char* str, const char* format, va_list ap);
 
 #endif  // LIB_STDIO_H_

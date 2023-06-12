@@ -185,8 +185,9 @@ void k_thread_b(void* arg) {
 void u_process_a(void) {
     // 用户进程通过 getpid() 来获取进程 PID
     process_a_pid = getpid();
+    char* name = "process_a";
     // 测试 printf
-    printf(" u_process_a: 0x%x\n", getpid());
+    printf("I am %s, pid: 0x%x%c\n", name, getpid(), '\n');
     for (;;) {}
     // for (;;) {
     //     test_var_a++;
