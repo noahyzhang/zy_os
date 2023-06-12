@@ -9,7 +9,7 @@ LD = ld
 LIB = -I ./
 ASFLAGS = -f elf
 ASBINLIB = -I boot/include/
-CFLAGS = -m32 -Wall $(LIB) -c -fno-builtin -fstack-protector -W -Wstrict-prototypes -Wmissing-prototypes
+CFLAGS = -m32 -Wall $(LIB) -c -fno-builtin -fno-stack-protector -W -Wstrict-prototypes -Wmissing-prototypes
 LDFLAGS = -melf_i386 -Ttext $(ENTRY_POINT) -e main
 OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/init.o $(BUILD_DIR)/interrupt.o \
 	$(BUILD_DIR)/timer.o $(BUILD_DIR)/kernel.o $(BUILD_DIR)/print.o \
@@ -17,7 +17,8 @@ OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/init.o $(BUILD_DIR)/interrupt.o \
 	$(BUILD_DIR)/string.o $(BUILD_DIR)/thread.o $(BUILD_DIR)/list.o  \
 	$(BUILD_DIR)/switch.o $(BUILD_DIR)/console.o $(BUILD_DIR)/sync.o  \
 	$(BUILD_DIR)/keyboard.o $(BUILD_DIR)/io_queue.o $(BUILD_DIR)/tss.o \
-	$(BUILD_DIR)/process.o $(BUILD_DIR)/syscall.o $(BUILD_DIR)/syscall-init.o 
+	$(BUILD_DIR)/process.o $(BUILD_DIR)/syscall.o $(BUILD_DIR)/syscall-init.o \
+	$(BUILD_DIR)/stdio.o 
 
 ##############     MBR代码编译     ############### 
 $(BUILD_DIR)/mbr.bin: boot/mbr.s
@@ -96,7 +97,12 @@ $(BUILD_DIR)/syscall.o: lib/user/syscall.c lib/user/syscall.h lib/stdint.h
 	$(CC) $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/syscall-init.o: user_process/syscall-init.c user_process/syscall-init.h \
-		thread/thread.h lib/stdint.h lib/kernel/print.h lib/user/syscall.h
+		thread/thread.h lib/stdint.h lib/kernel/print.h lib/user/syscall.h \
+		lib/string.h device/console.h
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/stdio.o: lib/stdio.c lib/stdio.h lib/stdint.h kernel/global.h \
+		lib/kernel/print.h lib/user/syscall.h lib/string.h kernel/interrupt.h
 	$(CC) $(CFLAGS) $< -o $@
 
 ##############    汇编代码编译    ###############

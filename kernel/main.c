@@ -10,6 +10,7 @@
 #include "user_process/process.h"
 #include "lib/user/syscall.h"
 #include "user_process/syscall-init.h"
+#include "lib/stdio.h"
 
 /**
  * 注意 main 函数一定要是 main.c 文件的第一个函数，因为我们设定的从 0xc0001500 开始执行
@@ -184,6 +185,8 @@ void k_thread_b(void* arg) {
 void u_process_a(void) {
     // 用户进程通过 getpid() 来获取进程 PID
     process_a_pid = getpid();
+    // 测试 printf
+    printf(" u_process_a: 0x%x\n", getpid());
     for (;;) {}
     // for (;;) {
     //     test_var_a++;
@@ -192,6 +195,8 @@ void u_process_a(void) {
 
 void u_process_b(void) {
     process_b_pid = getpid();
+    // 测试 printf
+    // printf(" u_process_b: 0x%x\n", getpid());
     for (;;) {}
     // for (;;) {
     //     test_var_b++;
