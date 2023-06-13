@@ -9,7 +9,7 @@ LD = ld
 LIB = -I ./
 ASFLAGS = -f elf
 ASBINLIB = -I boot/include/
-CFLAGS = -m32 -Wall $(LIB) -c -fno-builtin -fno-stack-protector -W -Wstrict-prototypes -Wmissing-prototypes
+CFLAGS = -m32 -Wall $(LIB) -g -c -fno-builtin -nostdinc -fno-pic -fno-pie -nostdlib -fno-stack-protector -W -Wstrict-prototypes -Wmissing-prototypes
 LDFLAGS = -melf_i386 -Ttext $(ENTRY_POINT) -e main
 OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/init.o $(BUILD_DIR)/interrupt.o \
 	$(BUILD_DIR)/timer.o $(BUILD_DIR)/kernel.o $(BUILD_DIR)/print.o \
@@ -144,3 +144,12 @@ qemug:
 	# qemu-system-x86_64 -m 32M -hda ./hd60M.img -S -s -d int -D qemu.log 
 	# qemu-system-i386 -m 32M -hda ./hd60M.img -S -s -d int -D qemu.log
 	qemu-system-i386 -drive file=hd60M.img,index=0,media=disk,format=raw -S -s
+bochs: all
+	bochs -f bochsrc.disk
+
+qemug: all
+	# setsid qemu-system-x86_64 -m 32M -kernel build/kernel.bin -drive file=./hd60M.img,index=0,media=disk,format=raw -S -s &
+	qemu-system-x86_64 -m 32M -hda ./hd60M.img -S -s
+
+qemu: all
+	qemu-system-i386 -m 32M -boot c -hda ./hd60M.img

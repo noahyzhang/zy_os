@@ -158,7 +158,10 @@ void k_thread_a(void* arg) {
     // console_put_int(process_a_pid);
     // console_put_char('\n');
     void* addr = sys_malloc(33);
-    printf("I am thread_a, sys_malloc(33), addr is 0x%x \n", (int)addr);
+    console_put_str("I am thread_a, sys_malloc(33), addr is 0x");
+    console_put_int((int)addr);
+    console_put_char('\n');
+    // printf("I am thread_a, sys_malloc(33), addr is 0x%x \n", (int)addr);
     for (;;) {}
     // for (;;) {
         // put_str("k_thread_a: ");
@@ -180,7 +183,10 @@ void k_thread_b(void* arg) {
     // console_put_int(process_b_pid);
     // console_put_char('\n');
     void* addr = sys_malloc(63);
-    printf("I am thread_b, sys_malloc(63), addr is 0x%x \n", (int)addr);
+    console_put_str("I am thread_b, sys_malloc(63), addr is 0x");
+    console_put_int((int)addr);
+    console_put_char('\n');
+    // printf("I am thread_b, sys_malloc(63), addr is 0x%x \n", (int)addr);
     for (;;) {}
     // for (;;) {
         // put_str("k_thread_b: ");
