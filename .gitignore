@@ -6,3 +6,4 @@ hd60M.img.lock
 log.bochsrc.disk
 .vscode/
 build/
+.idea/

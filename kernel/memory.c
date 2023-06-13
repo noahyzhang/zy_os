@@ -473,6 +473,7 @@ void* sys_malloc(uint32_t size) {
                 return NULL;
             }
             memset(a, 0, PAGE_SIZE);
+            // asm volatile ("xchg %%bx, %%bx" ::);
             // 对于分配的小块内存，将 desc 置为相应内存块描述符
             // cnt 置为此 arena 可用的内存块数，large 置为 false
             a->desc = &descs[desc_idx];
