@@ -104,16 +104,22 @@ int main(void) {
     // intr_enable();
 
     // 测试第一个系统调用 getpid()
-    init_all();
-    process_execute(u_process_a, "user_prog_a");
-    process_execute(u_process_b, "user_prog_b");
+    // init_all();
+    // process_execute(u_process_a, "user_prog_a");
+    // process_execute(u_process_b, "user_prog_b");
 
+    // intr_enable();
+    // console_put_str(" main_pid: 0x");
+    // console_put_int(sys_getpid());
+    // console_put_str("\n");
+    // thread_start("k_thread_a", 30, k_thread_a, "argA ");
+    // thread_start("t_thread_b", 31, k_thread_b, "argB ");
+
+    // 测试 sys_malloc
+    init_all();
     intr_enable();
-    console_put_str(" main_pid: 0x");
-    console_put_int(sys_getpid());
-    console_put_str("\n");
-    thread_start("k_thread_a", 30, k_thread_a, "argA ");
-    thread_start("t_thread_b", 31, k_thread_b, "argB ");
+    thread_start("thread_a", 30, k_thread_a, "argA ");
+    thread_start("thread_b", 31, k_thread_b, "argB ");
     for (;;) {}
 
     return 0;
@@ -144,13 +150,15 @@ void kernel_thread_func(void* arg) {
 }
 
 void k_thread_a(void* arg) {
-    char* para = (char*)arg;
-    console_put_str(" thread_a_pid: 0x");
-    console_put_int(sys_getpid());
-    console_put_char('\n');
-    console_put_str(" process_a_pid: 0x");
-    console_put_int(process_a_pid);
-    console_put_char('\n');
+    // char* para = (char*)arg;
+    // console_put_str(" thread_a_pid: 0x");
+    // console_put_int(sys_getpid());
+    // console_put_char('\n');
+    // console_put_str(" process_a_pid: 0x");
+    // console_put_int(process_a_pid);
+    // console_put_char('\n');
+    void* addr = sys_malloc(33);
+    printf("I am thread_a, sys_malloc(33), addr is 0x%x \n", (int)addr);
     for (;;) {}
     // for (;;) {
         // put_str("k_thread_a: ");
@@ -163,14 +171,16 @@ void k_thread_a(void* arg) {
 }
 
 void k_thread_b(void* arg) {
-    char* para = (char*)arg;
-    console_put_str(" thread_b_pid: 0x");
-    // 内核线程通过 sys_getpid() 获取 PID
-    console_put_int(sys_getpid());
-    console_put_char('\n');
-    console_put_str(" process_b_pid: 0x");
-    console_put_int(process_b_pid);
-    console_put_char('\n');
+    // char* para = (char*)arg;
+    // console_put_str(" thread_b_pid: 0x");
+    // // 内核线程通过 sys_getpid() 获取 PID
+    // console_put_int(sys_getpid());
+    // console_put_char('\n');
+    // console_put_str(" process_b_pid: 0x");
+    // console_put_int(process_b_pid);
+    // console_put_char('\n');
+    void* addr = sys_malloc(63);
+    printf("I am thread_b, sys_malloc(63), addr is 0x%x \n", (int)addr);
     for (;;) {}
     // for (;;) {
         // put_str("k_thread_b: ");
