@@ -21,7 +21,7 @@ boot_start:
     mov     si, jmp_to_setup
     call    print
 
-    jmp     BOOT_MAIN_ADDR + 0x300
+    jmp     BOOT_MAIN_ADDR
 
 read_hd:
     ; 0x1f2 8bit 指定读取或写入的扇区数
