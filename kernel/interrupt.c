@@ -119,6 +119,8 @@ static void general_intr_handler(uint8_t vec_nr) {
         put_str("\n");
     }
     put_str("!!!   exception message end   !!!\n");
+
+    // asm volatile ("xchg %%bx, %%bx" ::);
     // 能进入中断处理程序就表示已经处于关中断情况下，不会出现调度进程的情况。因此如下死循环不会被中断
     while (true) {}
 

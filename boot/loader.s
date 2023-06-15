@@ -1,32 +1,40 @@
    %include "boot.inc"
    section loader vstart=LOADER_BASE_ADDR
 ;构建gdt及其内部的描述符
+   ; 开始地址 0x900
    GDT_BASE:   dd    0x00000000 
 	       dd    0x00000000
 
+   ; 开始地址 0x908
    CODE_DESC:  dd    0x0000FFFF 
 	       dd    DESC_CODE_HIGH4
 
+   ; 开始地址 0x910
    DATA_STACK_DESC:  dd    0x0000FFFF
 		     dd    DESC_DATA_HIGH4
 
+   ; 开始地址 0x918
    VIDEO_DESC: dd    0x80000007	       ; limit=(0xbffff-0xb8000)/4k=0x7
 	       dd    DESC_VIDEO_HIGH4  ; 此时dpl为0
 
-   GDT_SIZE   equ   $ - GDT_BASE
-   GDT_LIMIT   equ   GDT_SIZE -	1 
+   ; 开始 0x920
+   GDT_SIZE   equ   $ - GDT_BASE  ; 值为 0x20 
+   GDT_LIMIT   equ   GDT_SIZE -	1  ; 值为 0x1f
    times 60 dq 0					 ; 此处预留60个描述符的空位(slot)
    SELECTOR_CODE equ (0x0001<<3) + TI_GDT + RPL0         ; 相当于(CODE_DESC - GDT_BASE)/8 + TI_GDT + RPL0
    SELECTOR_DATA equ (0x0002<<3) + TI_GDT + RPL0	 ; 同上
    SELECTOR_VIDEO equ (0x0003<<3) + TI_GDT + RPL0	 ; 同上 
 
-   ; total_mem_bytes用于保存内存容量,以字节为单位,此位置比较好记。
+   ; total_mem_bytes 用于保存内存容量,以字节为单位,此位置比较好记。
    ; 当前偏移loader.bin文件头0x200字节,loader.bin的加载地址是0x900,
    ; 故total_mem_bytes内存中的地址是0xb00.将来在内核中咱们会引用此地址
+   ; 开始地址 0xb00
    total_mem_bytes dd 0					 
    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
    ;以下是定义gdt的指针，前2字节是gdt界限，后4字节是gdt起始地址
+   ; 开始地址 0xb04
+   ; 这里应该存储 GDT_LIMIT: 0x001f GDT_BASE: 0x00000900
    gdt_ptr  dw  GDT_LIMIT 
 	    dd  GDT_BASE
 
@@ -37,7 +45,7 @@
    loader_start:
    
 ;-------  int 15h eax = 0000E820h ,edx = 534D4150h ('SMAP') 获取内存布局  -------
-
+   ; 开始地址 0xc00
    xor ebx, ebx		      ;第一次调用时，ebx值要为0
    mov edx, 0x534d4150	      ;edx只赋值一次，循环体中不会改变
    mov di, ards_buf	      ;ards结构缓冲区

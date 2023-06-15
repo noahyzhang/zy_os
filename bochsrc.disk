@@ -38,4 +38,5 @@ mouse: enabled=0
 ata0: enabled=1, ioaddr1=0x1f0, ioaddr2=0x3f0, irq=14
 ata0-master: type=disk, path="hd60M.img", mode=flat, cylinders=6, heads=16, spt=63
 
-#gdbstub: enabled=1, port=1234, text_base=0, data_base=0, bss_base=0
+# 对 GDB 的支持，gdb 可以远程连接到此机器的 1234 端口调试了
+# gdbstub: enabled=1, port=1234, text_base=0, data_base=0, bss_base=0
