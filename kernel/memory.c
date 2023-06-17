@@ -484,7 +484,7 @@ void* sys_malloc(uint32_t size) {
             // 在做这个操作前记得暂停中断
             enum intr_status old_status = intr_disable();
             for (block_idx = 0; block_idx < descs[desc_idx].blocks_per_arena; block_idx++) {
-                b = arena2block(b, block_idx);
+                b = arena2block(a, block_idx);
                 ASSERT(!elem_find(&a->desc->free_list, &b->free_elem));
                 list_append(&a->desc->free_list, &b->free_elem);
             }
