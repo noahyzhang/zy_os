@@ -101,9 +101,11 @@ uint32_t vsprintf(char* str, const char* format, va_list ap) {
  * @param ... 
  * @return uint32_t 
  */
-uint32_t sprintf(char* buf, const char* format, ...) {
+uint32_t snprintf(char* buf, uint32_t size, const char* format, ...) {
+    // 暂时先不处理 size 参数
+    (void)(size);
     va_list args;
-    uint32_t retval;
+    uint32_t retval = 0;
     va_start(args, format);
     retval = vsprintf(buf, format, args);
     va_end(args);

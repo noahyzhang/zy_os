@@ -9,7 +9,7 @@ LD = ld
 LIB = -I ./
 ASFLAGS = -f elf
 ASBINLIB = -I boot/include/
-CFLAGS = -m32 -Wall $(LIB) -g -c -fno-builtin -nostdinc -fno-pic -fno-pie -nostdlib -fno-stack-protector -W -Wstrict-prototypes -Wmissing-prototypes
+CFLAGS = -m32 -Wall -Werror -Wextra $(LIB) -g -c -fno-builtin -nostdinc -fno-pic -fno-pie -nostdlib -fno-stack-protector -W -Wstrict-prototypes -Wmissing-prototypes
 LDFLAGS = -melf_i386 -Ttext $(ENTRY_POINT) -e main
 OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/init.o $(BUILD_DIR)/interrupt.o \
 	$(BUILD_DIR)/timer.o $(BUILD_DIR)/kernel.o $(BUILD_DIR)/print.o \

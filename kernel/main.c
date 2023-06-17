@@ -150,6 +150,7 @@ void kernel_thread_func(void* arg) {
 }
 
 void k_thread_a(void* arg) {
+    (void)(arg);
     // char* para = (char*)arg;
     // console_put_str(" thread_a_pid: 0x");
     // console_put_int(sys_getpid());
@@ -174,6 +175,7 @@ void k_thread_a(void* arg) {
 }
 
 void k_thread_b(void* arg) {
+    (void)(arg);
     // char* para = (char*)arg;
     // console_put_str(" thread_b_pid: 0x");
     // // 内核线程通过 sys_getpid() 获取 PID

@@ -117,7 +117,8 @@ static char keymap[][2] = {
 static void intr_keyboard_handler(void) {
     // put_str("receive keyboard interrupt\n");
     // 这次中断发生前的上一次中断，以下三个键是否有按下
-    bool ctrl_down_last = ctrl_status;
+    // 暂时没有使用，先注释掉
+    // bool ctrl_down_last = ctrl_status;
     bool shift_down_last = shift_status;
     bool caps_lock_last = caps_lock_status;
 
