@@ -124,13 +124,14 @@ mk_dir:
 
 mk_img:
 	if [ ! -e $(DISK_IMG) ];then bximage -q -func="create" -hd=60 -imgmode="flat" -sectsize=512 $(DISK_IMG);fi
+	# if [ ! -e $(DISK_IMG) ];then qemu-img create -u $(DISK_IMG) 60M;fi
 
 hd:
 	dd if=$(BUILD_DIR)/mbr.bin of=hd60M.img bs=512 count=1  conv=notrunc
 	dd if=$(BUILD_DIR)/loader.bin of=hd60M.img bs=512 count=4 seek=2 conv=notrunc
 	dd if=$(BUILD_DIR)/kernel.bin \
            of=hd60M.img \
-           bs=512 count=200 seek=9 conv=notrunc
+           bs=512 count=200 seek=6 conv=notrunc
 
 clean:
 	cd $(BUILD_DIR) && rm -f ./* && rm ../$(DISK_IMG)
@@ -138,3 +139,8 @@ clean:
 build: $(BUILD_DIR)/kernel.bin $(BUILD_DIR)/mbr.bin $(BUILD_DIR)/loader.bin
 
 all: mk_dir mk_img build hd
+
+qemug:
+	# qemu-system-x86_64 -m 32M -hda ./hd60M.img -S -s -d int -D qemu.log 
+	# qemu-system-i386 -m 32M -hda ./hd60M.img -S -s -d int -D qemu.log
+	qemu-system-i386 -drive file=hd60M.img,index=0,media=disk,format=raw -S -s

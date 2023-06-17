@@ -402,7 +402,7 @@ void* sys_malloc(uint32_t size) {
 
 void mem_init(void) {
     put_str("mem_init start\n");
-    uint32_t mem_bytes_total = (*(uint32_t*)(0xb00));
+    uint32_t mem_bytes_total = (*(uint32_t*)(0x920));
     mem_pool_init(mem_bytes_total);
     // 初始化 k_block_descs 数组
     block_desc_init(k_block_descs);

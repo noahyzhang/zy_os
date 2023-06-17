@@ -15,7 +15,7 @@
 
    GDT_SIZE   equ   $ - GDT_BASE
    GDT_LIMIT   equ   GDT_SIZE -	1 
-   times 60 dq 0					 ; 此处预留60个描述符的空位(slot)
+   ; times 60 dq 0					 ; 此处预留60个描述符的空位(slot)
    SELECTOR_CODE equ (0x0001<<3) + TI_GDT + RPL0         ; 相当于(CODE_DESC - GDT_BASE)/8 + TI_GDT + RPL0
    SELECTOR_DATA equ (0x0002<<3) + TI_GDT + RPL0	 ; 同上
    SELECTOR_VIDEO equ (0x0003<<3) + TI_GDT + RPL0	 ; 同上 
@@ -23,15 +23,18 @@
    ; total_mem_bytes用于保存内存容量,以字节为单位,此位置比较好记。
    ; 当前偏移loader.bin文件头0x200字节,loader.bin的加载地址是0x900,
    ; 故total_mem_bytes内存中的地址是0xb00.将来在内核中咱们会引用此地址
+   ; 0x920 
    total_mem_bytes dd 0					 
    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
    ;以下是定义gdt的指针，前2字节是gdt界限，后4字节是gdt起始地址
+   ; 0x924
    gdt_ptr  dw  GDT_LIMIT 
 	    dd  GDT_BASE
 
    ;人工对齐:total_mem_bytes4字节+gdt_ptr6字节+ards_buf244字节+ards_nr2,共256字节
-   ards_buf times 244 db 0
+   ; 0x92a
+   ards_buf times 212 db 0
    ards_nr dw 0		      ;用于记录ards结构体数量
 
    loader_start:
@@ -116,6 +119,8 @@
 ;2 加载gdt
 ;3 将cr0的pe位置1
 
+   cli 
+
    ;-----------------  打开A20  ----------------
    in al,0x92
    or al,0000_0010B
@@ -134,7 +139,7 @@
 .error_hlt:		      ;出错则挂起
    hlt
 
-[bits 32]
+[BITS 32]
 p_mode_start:
    mov ax, SELECTOR_DATA
    mov ds, ax
@@ -145,11 +150,15 @@ p_mode_start:
    mov gs, ax
 
 ; -------------------------   加载kernel  ----------------------
-   mov eax, KERNEL_START_SECTOR        ; kernel.bin所在的扇区号
-   mov ebx, KERNEL_BIN_BASE_ADDR       ; 从磁盘读出后，写入到ebx指定的地址
-   mov ecx, 200			       ; 读入的扇区数
+   ; mov eax, KERNEL_START_SECTOR        ; kernel.bin所在的扇区号
+   ; mov ebx, KERNEL_BIN_BASE_ADDR       ; 从磁盘读出后，写入到ebx指定的地址
+   ; mov ecx, 200			       ; 读入的扇区数
+   ; call rd_disk_m_32
 
-   call rd_disk_m_32
+   mov edi, KERNEL_BIN_BASE_ADDR
+   mov ecx, KERNEL_START_SECTOR
+   mov ebx, 200
+   call read_hd
 
    ; 创建页目录及页表并初始化页内存位图
    call setup_page
@@ -290,91 +299,82 @@ setup_page:
    ret
 
 
-;-------------------------------------------------------------------------------
-			   ;功能:读取硬盘n个扇区
-rd_disk_m_32:	   
-;-------------------------------------------------------------------------------
-							 ; eax=LBA扇区号
-							 ; ebx=将数据写入的内存地址
-							 ; ecx=读入的扇区数
-      mov esi,eax	   ; 备份eax
-      mov di,cx		   ; 备份扇区数到di
-;读写硬盘:
-;第1步：设置要读取的扇区数
-      mov dx,0x1f2
-      mov al,cl
-      out dx,al            ;读取的扇区数
+read_hd:
+    ; 0x1f2 8bit 指定读取或写入的扇区数
+    mov dx, 0x1f2
+    mov al, bl
+    out dx, al
 
-      mov eax,esi	   ;恢复ax
+    ; 0x1f3 8bit iba地址的第八位 0-7
+    inc dx
+    mov al, cl
+    out dx, al
 
-;第2步：将LBA地址存入0x1f3 ~ 0x1f6
+    ; 0x1f4 8bit iba地址的中八位 8-15
+    inc dx
+    mov al, ch
+    out dx, al
 
-      ;LBA地址7~0位写入端口0x1f3
-      mov dx,0x1f3                       
-      out dx,al                          
+    ; 0x1f5 8bit iba地址的高八位 16-23
+    inc dx
+    shr ecx, 16
+    mov al, cl
+    out dx, al
 
-      ;LBA地址15~8位写入端口0x1f4
-      mov cl,8
-      shr eax,cl
-      mov dx,0x1f4
-      out dx,al
+    ; 0x1f6 8bit
+    ; 0-3 位iba地址的24-27
+    ; 4 0表示主盘 1表示从盘
+    ; 5、7位固定为1
+    ; 6 0表示CHS模式，1表示LAB模式
+    inc dx
+    shr ecx, 8
+    and cl, 0b1111
+    mov al, 0b1110_0000     ; LBA模式
+    or al, cl
+    out dx, al
 
-      ;LBA地址23~16位写入端口0x1f5
-      shr eax,cl
-      mov dx,0x1f5
-      out dx,al
+    ; 0x1f7 8bit  命令或状态端口
+    inc dx
+    mov al, 0x20
+    out dx, al
 
-      shr eax,cl
-      and al,0x0f	   ;lba第24~27位
-      or al,0xe0	   ; 设置7～4位为1110,表示lba模式
-      mov dx,0x1f6
-      out dx,al
+    ; 设置loop次数，读多少个扇区要loop多少次
+    mov cl, bl
+.start_read:
+    push cx     ; 保存loop次数，防止被下面的代码修改破坏
 
-;第3步：向0x1f7端口写入读命令，0x20 
-      mov dx,0x1f7
-      mov al,0x20                        
-      out dx,al
+    call .wait_hd_prepare
+    call read_hd_data
 
-;;;;;;; 至此,硬盘控制器便从指定的lba地址(eax)处,读出连续的cx个扇区,下面检查硬盘状态,不忙就能把这cx个扇区的数据读出来
+    pop cx      ; 恢复loop次数
 
-;第4步：检测硬盘状态
-  .not_ready:		   ;测试0x1f7端口(status寄存器)的的BSY位
-      ;同一端口,写时表示写入命令字,读时表示读入硬盘状态
-      nop
-      in al,dx
-      and al,0x88	   ;第4位为1表示硬盘控制器已准备好数据传输,第7位为1表示硬盘忙
-      cmp al,0x08
-      jnz .not_ready	   ;若未准备好,继续等。
+    loop .start_read
 
-;第5步：从0x1f0端口读数据
-      mov ax, di	   ;以下从硬盘端口读数据用insw指令更快捷,不过尽可能多的演示命令使用,
-			   ;在此先用这种方法,在后面内容会用到insw和outsw等
+.return:
+    ret
 
-      mov dx, 256	   ;di为要读取的扇区数,一个扇区有512字节,每次读入一个字,共需di*512/2次,所以di*256
-      mul dx
-      mov cx, ax	   
-      mov dx, 0x1f0
-  .go_on_read:
-      in ax,dx		
-      mov [ebx], ax
-      add ebx, 2
-			  ; 由于在实模式下偏移地址为16位,所以用bx只会访问到0~FFFFh的偏移。
-			  ; loader的栈指针为0x900,bx为指向的数据输出缓冲区,且为16位，
-			  ; 超过0xffff后,bx部分会从0开始,所以当要读取的扇区数过大,待写入的地址超过bx的范围时，
-			  ; 从硬盘上读出的数据会把0x0000~0xffff的覆盖，
-			  ; 造成栈被破坏,所以ret返回时,返回地址被破坏了,已经不是之前正确的地址,
-			  ; 故程序出会错,不知道会跑到哪里去。
-			  ; 所以改为ebx代替bx指向缓冲区,这样生成的机器码前面会有0x66和0x67来反转。
-			  ; 0X66用于反转默认的操作数大小! 0X67用于反转默认的寻址方式.
-			  ; cpu处于16位模式时,会理所当然的认为操作数和寻址都是16位,处于32位模式时,
-			  ; 也会认为要执行的指令是32位.
-			  ; 当我们在其中任意模式下用了另外模式的寻址方式或操作数大小(姑且认为16位模式用16位字节操作数，
-			  ; 32位模式下用32字节的操作数)时,编译器会在指令前帮我们加上0x66或0x67，
-			  ; 临时改变当前cpu模式到另外的模式下.
-			  ; 假设当前运行在16位模式,遇到0X66时,操作数大小变为32位.
-			  ; 假设当前运行在32位模式,遇到0X66时,操作数大小变为16位.
-			  ; 假设当前运行在16位模式,遇到0X67时,寻址方式变为32位寻址
-			  ; 假设当前运行在32位模式,遇到0X67时,寻址方式变为16位寻址.
+; 一直等待，直到硬盘的状态是：不繁忙，数据已准备好
+; 即第7位为0，第3位为1，第0位为0
+.wait_hd_prepare:
+    mov dx, 0x1f7
 
-      loop .go_on_read
-      ret
+.check:
+    in al, dx
+    and al, 0b1000_1000
+    cmp al, 0b0000_1000
+    jnz .check
+
+    ret
+
+; 读硬盘，一次读两个字节，读256次，刚好读一个扇区
+read_hd_data:
+    mov dx, 0x1f0
+    mov cx, 256
+
+.read_word:
+    in ax, dx
+    mov [edi], ax
+    add edi, 2
+    loop .read_word
+
+    ret
