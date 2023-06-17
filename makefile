@@ -148,6 +148,6 @@ qemu_debug:
 	# qemu-system-i386 -m 32M -hda ./hd60M.img -S -s -d int -D qemu.log
 	qemu-system-i386 -drive file=hd60M.img,index=0,media=disk,format=raw -S -s
 
-qemu: all
+qemu:
 	qemu-system-i386 -m 32M -boot c -hda ./hd60M.img
 
