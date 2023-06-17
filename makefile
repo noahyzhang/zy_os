@@ -140,16 +140,14 @@ build: $(BUILD_DIR)/kernel.bin $(BUILD_DIR)/mbr.bin $(BUILD_DIR)/loader.bin
 
 all: mk_dir mk_img build hd
 
-qemug:
+bochs:
+	bochs -f bochsrc.disk
+
+qemu_debug:
 	# qemu-system-x86_64 -m 32M -hda ./hd60M.img -S -s -d int -D qemu.log 
 	# qemu-system-i386 -m 32M -hda ./hd60M.img -S -s -d int -D qemu.log
 	qemu-system-i386 -drive file=hd60M.img,index=0,media=disk,format=raw -S -s
-bochs: all
-	bochs -f bochsrc.disk
-
-qemug: all
-	# setsid qemu-system-x86_64 -m 32M -kernel build/kernel.bin -drive file=./hd60M.img,index=0,media=disk,format=raw -S -s &
-	qemu-system-x86_64 -m 32M -hda ./hd60M.img -S -s
 
 qemu: all
 	qemu-system-i386 -m 32M -boot c -hda ./hd60M.img
+
