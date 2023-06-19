@@ -553,7 +553,7 @@ void mfree_page(enum pool_flags pf, void* p_vaddr, uint32_t pg_cnt) {
     uint32_t pg_phy_addr;
     uint32_t i_vaddr = (uint32_t)p_vaddr;
     uint32_t page_cnt = 0;
-    ASSERT((pg_cnt >= 1) && (i_vaddr & PAGE_SIZE == 0));
+    ASSERT((pg_cnt >= 1) && ((i_vaddr % PAGE_SIZE) == 0));
     // 获取虚拟地址 p_vaddr 对应的物理地址
     pg_phy_addr = addr_v2p(i_vaddr);
     // 确保待释放的物理内存在低端 1M+1K 大小的页目录+1k大小的页表地址范围外

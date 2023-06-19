@@ -116,8 +116,16 @@ int main(void) {
     // thread_start("t_thread_b", 31, k_thread_b, "argB ");
 
     // 测试 sys_malloc
+    // init_all();
+    // intr_enable();
+    // thread_start("thread_a", 30, k_thread_a, "argA ");
+    // thread_start("thread_b", 31, k_thread_b, "argB ");
+
+    // 测试系统调用 malloc、free
     init_all();
     intr_enable();
+    process_execute(u_process_a, "user_prog_a");
+    process_execute(u_process_b, "user_prog_b");
     thread_start("thread_a", 30, k_thread_a, "argA ");
     thread_start("thread_b", 31, k_thread_b, "argB ");
     for (;;) {}
@@ -158,10 +166,22 @@ void k_thread_a(void* arg) {
     // console_put_str(" process_a_pid: 0x");
     // console_put_int(process_a_pid);
     // console_put_char('\n');
-    void* addr = sys_malloc(33);
-    console_put_str("I am thread_a, sys_malloc(33), addr is 0x");
-    console_put_int((int)addr);
+    void* addr1 = sys_malloc(33);
+    void* addr2 = sys_malloc(255);
+    void* addr3 = sys_malloc(254);
+
+    console_put_str("I am thread_a malloc addr1 is 0x");
+    console_put_int((int)addr1);
+    console_put_char(',');
+    console_put_int((int)addr2);
+    console_put_char(',');
+    console_put_int((int)addr3);
     console_put_char('\n');
+    int cpu_delay = 100000;
+    for (; cpu_delay-- > 0;) {}
+    sys_free(addr1);
+    sys_free(addr2);
+    sys_free(addr3);
     // printf("I am thread_a, sys_malloc(33), addr is 0x%x \n", (int)addr);
     for (;;) {}
     // for (;;) {
@@ -184,11 +204,28 @@ void k_thread_b(void* arg) {
     // console_put_str(" process_b_pid: 0x");
     // console_put_int(process_b_pid);
     // console_put_char('\n');
-    void* addr = sys_malloc(63);
-    console_put_str("I am thread_b, sys_malloc(63), addr is 0x");
-    console_put_int((int)addr);
-    console_put_char('\n');
+    // void* addr = sys_malloc(63);
+    // console_put_str("I am thread_b, sys_malloc(63), addr is 0x");
+    // console_put_int((int)addr);
+    // console_put_char('\n');
     // printf("I am thread_b, sys_malloc(63), addr is 0x%x \n", (int)addr);
+
+    void* addr1 = sys_malloc(33);
+    void* addr2 = sys_malloc(255);
+    void* addr3 = sys_malloc(254);
+
+    console_put_str("I am thread_b malloc addr1 is 0x");
+    console_put_int((int)addr1);
+    console_put_char(',');
+    console_put_int((int)addr2);
+    console_put_char(',');
+    console_put_int((int)addr3);
+    console_put_char('\n');
+    int cpu_delay = 100000;
+    for (; cpu_delay-- > 0;) {}
+    sys_free(addr1);
+    sys_free(addr2);
+    sys_free(addr3);
     for (;;) {}
     // for (;;) {
         // put_str("k_thread_b: ");
@@ -202,10 +239,20 @@ void k_thread_b(void* arg) {
 
 void u_process_a(void) {
     // 用户进程通过 getpid() 来获取进程 PID
-    process_a_pid = getpid();
-    char* name = "process_a";
+    // process_a_pid = getpid();
+    // char* name = "process_a";
     // 测试 printf
-    printf("I am %s, pid: 0x%x%c\n", name, getpid(), '\n');
+    // printf("I am %s, pid: 0x%x%c\n", name, getpid(), '\n');
+
+    void* addr1 = malloc(256);
+    void* addr2 = malloc(255);
+    void* addr3 = malloc(254);
+    printf("u_process_a malloc addr: 0x%x, 0x%x, 0x%x\n", (int)addr1, (int)addr2, (int)addr3);
+    int cpu_delay = 100000;
+    for (; cpu_delay-- > 0;) {}
+    free(addr1);
+    free(addr2);
+    free(addr3);
     for (;;) {}
     // for (;;) {
     //     test_var_a++;
@@ -213,9 +260,19 @@ void u_process_a(void) {
 }
 
 void u_process_b(void) {
-    process_b_pid = getpid();
+    // process_b_pid = getpid();
     // 测试 printf
     // printf(" u_process_b: 0x%x\n", getpid());
+
+    void* addr1 = malloc(256);
+    void* addr2 = malloc(255);
+    void* addr3 = malloc(254);
+    printf("u_process_b malloc addr: 0x%x, 0x%x, 0x%x\n", (int)addr1, (int)addr2, (int)addr3);
+    int cpu_delay = 100000;
+    for (; cpu_delay-- > 0;) {}
+    free(addr1);
+    free(addr2);
+    free(addr3);
     for (;;) {}
     // for (;;) {
     //     test_var_b++;
