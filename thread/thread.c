@@ -12,6 +12,8 @@
 
 // 主线程 PCB
 struct task_struct* main_thread;
+// idle 线程 PCB
+struct task_struct* idle_thread;
 // 就绪队列，只存储准备运行的线程
 struct list thread_ready_list;
 // 所有任务队列，存储包括就绪的、阻塞的、正在执行的的线程
@@ -22,6 +24,15 @@ struct lock pid_lock;
 static struct list_elem* thread_tag;
 
 extern void switch_to(struct task_struct* cur, struct task_struct* next);
+
+static void idle(void* arg) {
+    (void)arg;
+    for (;;) {
+        thread_block(TASK_BLOCKED);
+        // 执行 hlt 时必须要保证目前处于开中断的情况下
+        asm volatile("sti; hlt" : : : "memory");
+    }
+}
 
 struct task_struct* running_thread(void) {
     uint32_t esp;
@@ -50,6 +61,13 @@ static pid_t allocate_pid(void) {
     return next_pid;
 }
 
+/**
+ * @brief 创建线程，填充内容
+ * 
+ * @param pthread 
+ * @param func 
+ * @param func_arg 
+ */
 void thread_create(struct task_struct* pthread, thread_func func, void* func_arg) {
     // 预留中断使用栈的空间
     pthread->self_kernel_stack -= sizeof(struct intr_stack);
@@ -144,6 +162,10 @@ void schedule(void) {
         // 如果此线程是非 RUNNING 状态，需要等待某个事件发生后才能上 CPU 运行
         // 那么就不需要将其加入到队列，让他等待后面的调度吧
     }
+    // 如果就绪队列中没有可运行的任务，就唤醒 idle
+    if (list_empty(&thread_ready_list)) {
+        thread_unblock(idle_thread);
+    }
     ASSERT(!list_empty(&thread_ready_list));
     thread_tag = NULL;
     // 将 thread_ready_list 队列中第一个就绪线程弹出，准备将其调度上 CPU
@@ -196,6 +218,20 @@ void thread_unblock(struct task_struct* pthread) {
     intr_set_status(old_status);
 }
 
+/**
+ * @brief 主动让出 CPU，换其他线程运行
+ * 
+ */
+void thread_yield(void) {
+    struct task_struct* cur = running_thread();
+    enum intr_status old_status = intr_disable();
+    ASSERT(!elem_find(&thread_ready_list, &cur->general_tag));
+    list_append(&thread_ready_list, &cur->general_tag);
+    cur->status = TASK_READY;
+    schedule();
+    intr_set_status(old_status);
+}
+
 void thread_init(void) {
     put_str("thread_init start\n");
     list_init(&thread_ready_list);
@@ -203,5 +239,7 @@ void thread_init(void) {
     lock_init(&pid_lock);
     // 将当前 main 函数创建为线程
     make_main_thread();
+    // 创建 idle 线程
+    idle_thread = thread_stack("idle", 10, idle, NULL);
     put_str("thread_init end\n");
 }
