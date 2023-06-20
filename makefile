@@ -1,5 +1,6 @@
 BUILD_DIR = ./build
-DISK_IMG = hd60M.img
+MASTER_DISK_IMG = hd60M.img
+SLAVE_DISK_IMG = hd80M.img 
 ENTRY_POINT = 0xc0001500
 
 AS = nasm
@@ -123,8 +124,9 @@ mk_dir:
 	if [ ! -d $(BUILD_DIR) ];then mkdir $(BUILD_DIR);fi
 
 mk_img:
-	if [ ! -e $(DISK_IMG) ];then bximage -q -func="create" -hd=60 -imgmode="flat" -sectsize=512 $(DISK_IMG);fi
-	# if [ ! -e $(DISK_IMG) ];then qemu-img create -u $(DISK_IMG) 60M;fi
+	if [ ! -e $(MASTER_DISK_IMG) ];then bximage -q -func="create" -hd=60 -imgmode="flat" -sectsize=512 $(MASTER_DISK_IMG);fi
+	if [ ! -e $(SLAVE_DISK_IMG) ];then bximage -q -func="create" -hd=80 -imgmode="flat" -sectsize=512 ${SLAVE_DISK_IMG};fi
+	# if [ ! -e $(MASTER_DISK_IMG) ];then qemu-img create -u $(MASTER_DISK_IMG) 60M;fi
 
 hd:
 	dd if=$(BUILD_DIR)/mbr.bin of=hd60M.img bs=512 count=1  conv=notrunc
@@ -134,7 +136,7 @@ hd:
            bs=512 count=200 seek=6 conv=notrunc
 
 clean:
-	cd $(BUILD_DIR) && rm -f ./* && rm ../$(DISK_IMG)
+	cd $(BUILD_DIR) && rm -f ./* && rm ../$(MASTER_DISK_IMG) && rm ../${SLAVE_DISK_IMG}
 
 build: $(BUILD_DIR)/kernel.bin $(BUILD_DIR)/mbr.bin $(BUILD_DIR)/loader.bin
 
