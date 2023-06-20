@@ -5,14 +5,18 @@
 #include "kernel/debug.h"
 #include "kernel/interrupt.h"
 
-#define IRQ0_FREQUENCY	   1
-#define INPUT_FREQUENCY	   1193180U
-#define COUNTER0_VALUE	   ((uint16_t)INPUT_FREQUENCY / (uint16_t)IRQ0_FREQUENCY)
-#define CONTRER0_PORT	   0x40
-#define COUNTER0_NO	   0
-#define COUNTER_MODE	   2
+// 时钟中断频率（每秒 100 次）
+#define IRQ0_FREQUENCY     100
+#define INPUT_FREQUENCY    1193180U
+#define COUNTER0_VALUE     ((uint16_t)INPUT_FREQUENCY / (uint16_t)IRQ0_FREQUENCY)
+#define CONTRER0_PORT      0x40
+#define COUNTER0_NO        0
+#define COUNTER_MODE       2
 #define READ_WRITE_LATCH   3
 #define PIT_CONTROL_PORT   0x43
+
+// 每多少毫秒发生一次中断
+#define mil_seconds_per_intr (1000 / IRQ0_FREQUENCY)
 
 // 内核自中断开启以来总共的滴答数
 uint32_t ticks;
@@ -37,7 +41,34 @@ static void intr_timer_handler(void) {
     }
 }
 
-/* 把操作的计数器counter_no、读写锁属性rwl、计数器模式counter_mode写入模式控制寄存器并赋予初始值counter_value */
+/**
+ * @brief 以 tick 为单位的 sleep, 任何时间形式的 sleep 会转换此 ticks 形式
+ * 
+ * @param sleep_ticks 
+ */
+static void ticks_to_sleep(uint32_t sleep_ticks) {
+    uint32_t start_tick = ticks;
+    // 若间隔的ticks数不够便让出cpu
+    while (ticks - start_tick < sleep_ticks) {
+        thread_yield();
+    }
+}
+
+/**
+ * @brief 以毫秒为单位的 sleep
+ * 
+ * @param m_seconds 
+ */
+void mtime_sleep(uint32_t m_seconds) {
+    uint32_t sleep_ticks = DIV_ROUND_UP(m_seconds, mil_seconds_per_intr);
+    ASSERT(sleep_ticks > 0);
+    ticks_to_sleep(sleep_ticks);
+}
+
+/**
+ * @brief 把操作的计数器counter_no、读写锁属性rwl、计数器模式counter_mode写入模式控制寄存器并赋予初始值counter_value
+ * 
+ */
 static void frequency_set(uint8_t counter_port, \
     uint8_t counter_no, \
     uint8_t rwl, \
