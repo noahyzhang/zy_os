@@ -3,6 +3,8 @@ out/
 bx_enh_dbg.ini
 hd60M.img
 hd60M.img.lock
+hd80M.img
+hd80M.img.lock 
 log.bochsrc.disk
 .vscode/
 build/

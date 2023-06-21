@@ -19,7 +19,7 @@ OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/init.o $(BUILD_DIR)/interrupt.o \
 	$(BUILD_DIR)/switch.o $(BUILD_DIR)/console.o $(BUILD_DIR)/sync.o  \
 	$(BUILD_DIR)/keyboard.o $(BUILD_DIR)/io_queue.o $(BUILD_DIR)/tss.o \
 	$(BUILD_DIR)/process.o $(BUILD_DIR)/syscall.o $(BUILD_DIR)/syscall-init.o \
-	$(BUILD_DIR)/stdio.o 
+	$(BUILD_DIR)/stdio.o $(BUILD_DIR)/stdio_kernel.o  $(BUILD_DIR)/ide.o
 
 ##############     MBR代码编译     ############### 
 $(BUILD_DIR)/mbr.bin: boot/mbr.s
@@ -106,6 +106,15 @@ $(BUILD_DIR)/stdio.o: lib/stdio.c lib/stdio.h lib/stdint.h kernel/global.h \
 		lib/kernel/print.h lib/user/syscall.h lib/string.h kernel/interrupt.h
 	$(CC) $(CFLAGS) $< -o $@
 
+$(BUILD_DIR)/stdio_kernel.o: lib/kernel/stdio_kernel.c lib/kernel/stdio_kernel.h \
+		lib/stdint.h lib/kernel/print.h lib/stdio.h device/console.h kernel/global.h
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/ide.o: device/ide.c device/ide.h lib/stdint.h thread/sync.h \
+		lib/kernel/bitmap.h lib/stdio.h kernel/interrupt.h kernel/memory.h \
+		kernel/debug.h lib/string.h lib/kernel/io.h device/timer.h 
+	$(CC) $(CFLAGS) $< -o $@
+
 ##############    汇编代码编译    ###############
 $(BUILD_DIR)/kernel.o: kernel/kernel.s
 	$(AS) $(ASFLAGS) $< -o $@
@@ -126,6 +135,7 @@ mk_dir:
 mk_img:
 	if [ ! -e $(MASTER_DISK_IMG) ];then bximage -q -func="create" -hd=60 -imgmode="flat" -sectsize=512 $(MASTER_DISK_IMG);fi
 	if [ ! -e $(SLAVE_DISK_IMG) ];then bximage -q -func="create" -hd=80 -imgmode="flat" -sectsize=512 ${SLAVE_DISK_IMG};fi
+	# if [ -e $(SLAVE_DISK_IMG) ];then echo -e  "n\np\n1\n\n+4M\nn\ne\n2\n\n\nn\n\n+5M\nn\n\n+6M\nn\n\n+7M\nn\n\n+8M\nn\n\n+9M\nn\n\n\nw\n" | fdisk $(SLAVE_DISK_IMG) &> /dev/null; fi
 	# if [ ! -e $(MASTER_DISK_IMG) ];then qemu-img create -u $(MASTER_DISK_IMG) 60M;fi
 
 hd:

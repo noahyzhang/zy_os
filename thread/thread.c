@@ -240,6 +240,6 @@ void thread_init(void) {
     // 将当前 main 函数创建为线程
     make_main_thread();
     // 创建 idle 线程
-    idle_thread = thread_stack("idle", 10, idle, NULL);
+    idle_thread = thread_start("idle", 10, idle, NULL);
     put_str("thread_init end\n");
 }

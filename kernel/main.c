@@ -122,12 +122,14 @@ int main(void) {
     // thread_start("thread_b", 31, k_thread_b, "argB ");
 
     // 测试系统调用 malloc、free
+    // init_all();
+    // intr_enable();
+    // process_execute(u_process_a, "user_prog_a");
+    // process_execute(u_process_b, "user_prog_b");
+    // thread_start("thread_a", 30, k_thread_a, "argA ");
+    // thread_start("thread_b", 31, k_thread_b, "argB ");
+
     init_all();
-    intr_enable();
-    process_execute(u_process_a, "user_prog_a");
-    process_execute(u_process_b, "user_prog_b");
-    thread_start("thread_a", 30, k_thread_a, "argA ");
-    thread_start("thread_b", 31, k_thread_b, "argB ");
     for (;;) {}
 
     return 0;

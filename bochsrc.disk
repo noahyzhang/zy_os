@@ -26,7 +26,7 @@ log: log.bochsrc.disk
 
 # 调试，可以下断点
 magic_break: enabled=1
-# display_library: x, options="gui_debug"
+display_library: x, options="gui_debug"
 
 # 第六步，开启或关闭某些功能。
 # 下面是关闭鼠标，并打开键盘。

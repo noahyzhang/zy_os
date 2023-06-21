@@ -9,8 +9,8 @@
  * 
  */
 
-#ifndef KERNEL_IDE_H_
-#define KERNEL_IDE_H_
+#ifndef DEVICE_IDE_H_
+#define DEVICE_IDE_H_
 
 #include "lib/stdint.h"
 #include "thread/sync.h"
@@ -81,7 +81,11 @@ struct ide_channel {
 
 extern uint8_t channel_cnt;
 extern struct ide_channel channels[];
+extern struct list partition_list;
 
 void ide_init(void);
+void intr_hd_handler(uint8_t irq_no);
+void ide_read(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt);
+void ide_write(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt);
 
-#endif  // KERNEL_IDE_H_
+#endif  // DEVICE_IDE_H_
