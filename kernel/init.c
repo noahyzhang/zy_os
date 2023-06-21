@@ -9,8 +9,12 @@
 #include "user_process/tss.h"
 #include "user_process/syscall-init.h"
 #include "device/ide.h"
+#include "fs/fs.h"
 
-/*负责初始化所有模块 */
+/**
+ * @brief 初始化所有模块
+ * 
+ */
 void init_all() {
     put_str("init_all\n");
     idt_init();   //初始化中断
@@ -24,5 +28,7 @@ void init_all() {
 
     intr_enable();  // 后面的 ide_init 需要打开中断
     ide_init();  // 初始化硬盘
+
+    filesys_init();  // 初始化文件系统
     // asm volatile ("xchg %%bx, %%bx" ::);
 }

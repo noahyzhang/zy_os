@@ -19,7 +19,8 @@ OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/init.o $(BUILD_DIR)/interrupt.o \
 	$(BUILD_DIR)/switch.o $(BUILD_DIR)/console.o $(BUILD_DIR)/sync.o  \
 	$(BUILD_DIR)/keyboard.o $(BUILD_DIR)/io_queue.o $(BUILD_DIR)/tss.o \
 	$(BUILD_DIR)/process.o $(BUILD_DIR)/syscall.o $(BUILD_DIR)/syscall-init.o \
-	$(BUILD_DIR)/stdio.o $(BUILD_DIR)/stdio_kernel.o  $(BUILD_DIR)/ide.o
+	$(BUILD_DIR)/stdio.o $(BUILD_DIR)/stdio_kernel.o  $(BUILD_DIR)/ide.o \
+	$(BUILD_DIR)/fs.o 
 
 ##############     MBR代码编译     ############### 
 $(BUILD_DIR)/mbr.bin: boot/mbr.s
@@ -113,6 +114,11 @@ $(BUILD_DIR)/stdio_kernel.o: lib/kernel/stdio_kernel.c lib/kernel/stdio_kernel.h
 $(BUILD_DIR)/ide.o: device/ide.c device/ide.h lib/stdint.h thread/sync.h \
 		lib/kernel/bitmap.h lib/stdio.h kernel/interrupt.h kernel/memory.h \
 		kernel/debug.h lib/string.h lib/kernel/io.h device/timer.h 
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/fs.o: fs/fs.c fs/fs.h lib/stdint.h device/ide.h fs/dir.h fs/inode.h \
+		fs/super_block.h lib/kernel/stdio_kernel.h lib/kernel/list.h lib/string.h \
+		kernel/global.h kernel/debug.h kernel/memory.h
 	$(CC) $(CFLAGS) $< -o $@
 
 ##############    汇编代码编译    ###############
