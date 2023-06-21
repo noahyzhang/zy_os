@@ -18,6 +18,8 @@
 
 // task_struct 中 stack_magic 的魔数值
 #define TASK_STACK_MAGIC_VALUE (0x19971216)
+// 每个线程可以打开的文件数
+#define MAX_FILES_OPEN_PER_PROC 8
 
 // 函数类型
 typedef void thread_func(void* arg);
@@ -107,6 +109,8 @@ struct task_struct {
     // 此任务自从上 CPU 运行后至今占用了多少 cpu 滴答数
     // 任务运行了多久
     uint32_t elapsed_ticks;
+    // 文件描述符数组
+    int32_t fd_table[MAX_FILES_OPEN_PER_PROC];
     // 用于线程在一般队列中的节点（比如：就绪队列或者其他队列）
     struct list_elem general_tag;
     // 用于线程队列 thread_all_list 中的节点

@@ -100,6 +100,14 @@ void init_thread(struct task_struct* pthread, char* name, int prio) {
     pthread->ticks = prio;
     pthread->elapsed_ticks = 0;
     pthread->pg_dir = NULL;
+    // 预留标准输入输出
+    pthread->fd_table[0] = 0;
+    pthread->fd_table[1] = 1;
+    pthread->fd_table[2] = 2;
+    // 其余的全置为 -1
+    for (uint8_t fd_idx = 3; fd_idx < MAX_FILES_OPEN_PER_PROC; fd_idx++) {
+        pthread->fd_table[fd_idx] = -1;
+    }
     // 自定义的魔数，用于检测是否有栈溢出
     pthread->stack_magic = TASK_STACK_MAGIC_VALUE;
 }

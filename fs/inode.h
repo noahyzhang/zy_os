@@ -15,6 +15,7 @@
 #include "lib/stdint.h"
 #include "lib/string.h"
 #include "lib/kernel/list.h"
+#include "device/ide.h"
 
 /**
  * @brief inode 结构
@@ -37,5 +38,10 @@ struct inode {
     uint32_t i_sectors[13];
     struct list_elem inode_tag;
 };
+
+struct inode* inode_open(struct partition* part, uint32_t inode_no);
+void inode_sync(struct partition* part, struct inode* inode, void* io_buf);
+void inode_init(uint32_t inode_no, struct inode* new_inode);
+void inode_close(struct inode* inode);
 
 #endif  // FS_INODE_H_

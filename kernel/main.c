@@ -11,6 +11,7 @@
 #include "lib/user/syscall.h"
 #include "user_process/syscall-init.h"
 #include "lib/stdio.h"
+#include "fs/fs.h"
 
 /**
  * 注意 main 函数一定要是 main.c 文件的第一个函数，因为我们设定的从 0xc0001500 开始执行
@@ -129,7 +130,9 @@ int main(void) {
     // thread_start("thread_a", 30, k_thread_a, "argA ");
     // thread_start("thread_b", 31, k_thread_b, "argB ");
 
+    // 测试文件系统
     init_all();
+    sys_open("/file_1", O_CREAT);
     for (;;) {}
 
     return 0;
