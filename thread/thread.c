@@ -24,6 +24,7 @@ struct lock pid_lock;
 static struct list_elem* thread_tag;
 
 extern void switch_to(struct task_struct* cur, struct task_struct* next);
+extern void init(void);
 
 static void idle(void* arg) {
     (void)arg;
@@ -256,6 +257,9 @@ void thread_init(void) {
     list_init(&thread_ready_list);
     list_init(&thread_all_list);
     lock_init(&pid_lock);
+    // 先创建第一个用户进程：init
+    // 放在第一个初始化，这是第一个进程，init 进程的 pid 为 1
+    process_execute(init, "init");
     // 将当前 main 函数创建为线程
     make_main_thread();
     // 创建 idle 线程
