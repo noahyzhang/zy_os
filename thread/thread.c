@@ -62,6 +62,15 @@ static pid_t allocate_pid(void) {
 }
 
 /**
+ * @brief fork 进程时为其分配 pid
+ * 
+ * @return pid_t 
+ */
+pid_t fork_pid(void) {
+    return allocate_pid();
+}
+
+/**
  * @brief 创建线程，填充内容
  * 
  * @param pthread 
@@ -108,6 +117,8 @@ void init_thread(struct task_struct* pthread, char* name, int prio) {
     for (uint8_t fd_idx = 3; fd_idx < MAX_FILES_OPEN_PER_PROC; fd_idx++) {
         pthread->fd_table[fd_idx] = -1;
     }
+    // 任务的父进程默认为 -1（-1 表示没有父进程）
+    pthread->parent_pid = -1;
     // 自定义的魔数，用于检测是否有栈溢出
     pthread->stack_magic = TASK_STACK_MAGIC_VALUE;
 }

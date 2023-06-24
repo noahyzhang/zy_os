@@ -122,6 +122,8 @@ struct task_struct {
     struct virtual_addr user_process_vaddr;
     // 用户进程内存块描述符
     struct mem_block_desc u_block_desc[DESC_CNT];
+    // 父进程 pid
+    int16_t parent_pid;
     // 栈的边界标记，用于检测栈的溢出
     // 这个字段因为要作为边界标记，所以必须放在结构体的末尾
     uint32_t stack_magic;
@@ -139,6 +141,6 @@ void thread_block(enum task_status stat);
 void thread_unblock(struct task_struct* pthread);
 void thread_yield(void);
 void thread_init(void);
-
+pid_t fork_pid(void);
 
 #endif  // THREAD_THREAD_H_

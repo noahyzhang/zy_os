@@ -272,6 +272,26 @@ void* get_a_page(enum pool_flags pf, uint32_t vaddr) {
 }
 
 /**
+ * @brief 安装一页大小的 vaddr
+ *        专门针对 fork 时虚拟地址位图无须操作的情况
+ * @param pf 
+ * @param vaddr 
+ * @return void* 
+ */
+void* get_a_page_without_opvaddrbitmap(enum pool_flags pf, uint32_t vaddr) {
+    struct pool* mem_pool = pf & PF_KERNEL ? &kernel_pool : &user_pool;
+    lock_acquire(&mem_pool->lock);
+    void* page_phyaddr = palloc(mem_pool);
+    if (page_phyaddr == NULL) {
+        lock_release(&mem_pool->lock);
+        return NULL;
+    }
+    page_table_add((void*)vaddr, page_phyaddr);
+    lock_release(&mem_pool->lock);
+    return (void*)vaddr;
+}
+
+/**
  * @brief 获取物理地址（通过虚拟地址映射所得）
  * 
  * @param vaddr 

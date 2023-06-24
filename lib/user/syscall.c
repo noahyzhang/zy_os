@@ -39,3 +39,7 @@ void* malloc(uint32_t size) {
 void free(void* ptr) {
     _syscall1(SYS_FREE, ptr);
 }
+
+int16_t fork(void) {
+    return _syscall0(SYS_FORK);
+}
