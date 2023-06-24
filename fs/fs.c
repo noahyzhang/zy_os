@@ -441,8 +441,8 @@ int32_t sys_close(int32_t fd) {
 }
 
 /**
- * @brief 
- * 
+ * @brief 读取 buf 中 count 字节数据写入文件描述符 fd 中
+ *        成功返回写入的字节数，失败返回 -1
  * @param fd 
  * @param buf 
  * @param count 
@@ -468,6 +468,24 @@ int32_t sys_write(int32_t fd, const void* buf, uint32_t count) {
         console_put_str("sys_write: not allowed to write file without flag O_RDWR or O_WRONLY\n");
         return -1;
     }
+}
+
+/**
+ * @brief 从文件描述符 fd 指向的文件中读取 count 个字节到 buf
+ *        成功返回读取出来的字节数，到文件尾返回 -1
+ * @param fd 
+ * @param buf 
+ * @param count 
+ * @return int32_t 
+ */
+int32_t sys_read(int32_t fd, void* buf, uint32_t count) {
+    if (fd < 0) {
+        printk("sys_read: fd error\n");
+        return -1;
+    }
+    ASSERT(buf != NULL);
+    uint32_t g_fd = fd_local2global(fd);
+    return file_read(&file_table[g_fd], buf, count);
 }
 
 /**
