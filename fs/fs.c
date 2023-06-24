@@ -395,16 +395,48 @@ int32_t sys_open(const char* pathname, uint8_t flags) {
     }
 
     switch (flags & O_CREAT) {
-        case O_CREAT:
+    case O_CREAT:
         printk("creating file\n");
         fd = file_create(searched_record.parent_dir, (strrchr(pathname, '/') + 1), flags);
         dir_close(searched_record.parent_dir);
-        // 其余为打开文件
+        break;
+    default:  // 其余为打开文件，包括：O_RDONLY、O_WRONLY、O_RDWR
+        fd = file_open(inode_no, flags);
+        break;
     }
-
     // 此 fd 是指任务 pcb->fd_table 数组中的元素下标,
     // 并不是指全局 file_table 中的下标
     return fd;
+}
+
+/**
+ * @brief 将文件描述符转换为文件表的下标
+ * 
+ * @param local_fd 
+ * @return uint32_t 
+ */
+static uint32_t fd_local_to_global(uint32_t local_fd) {
+    struct task_struct* cur = running_thread();
+    int32_t global_fd = cur->fd_table[local_fd];
+    ASSERT(global_fd >= 0 && global_fd < MAX_FILE_OPEN);
+    return (uint32_t)global_fd;
+}
+
+/**
+ * @brief 关闭文件描述符 fd 指向的文件
+ *        成功返回 0，否则返回 -1
+ * @param fd 
+ * @return int32_t 
+ */
+int32_t sys_close(int32_t fd) {
+    int32_t res = -1;
+    if (fd > 2) {
+        uint32_t g_fd = fd_local_to_global(fd);
+        res = file_close(&file_table[g_fd]);
+        // 使该文件描述符可用
+        running_thread()->fd_table[fd] = -1;
+    }
+    return res;
 }
 
 /**

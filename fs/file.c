@@ -18,7 +18,6 @@
  */
 struct file file_table[MAX_FILE_OPEN];
 
-/* 从文件表file_table中获取一个空闲位,成功返回下标,失败返回-1 */
 /**
  * @brief 从文件表 file_table 中获取一个空闲位,成功返回下标,失败返回 -1
  * 
@@ -216,4 +215,59 @@ rollback:
     }
     sys_free(io_buf);
     return -1;
+}
+
+/**
+ * @brief 打开编号 inode_no 的 inode 对应的文件
+ *        如果成功则返回文件描述符，否则返回 -1
+ * @param inode_no 
+ * @param flag 
+ * @return int32_t 
+ */
+int32_t file_open(uint32_t inode_no, uint8_t flag) {
+    int fd_idx = get_free_slot_in_global();
+    if (fd_idx == -1) {
+        printk("exceed max open files\n");
+        return -1;
+    }
+    file_table[fd_idx].fd_inode = inode_open(cur_part, inode_no);
+    // 每次打开文件，要将 fd_pos 还原为 0，即让文件内的指针指向开头
+    file_table[fd_idx].fd_pos = 0;
+    file_table[fd_idx].fd_flag = flag;
+    bool* write_deny = &file_table[fd_idx].fd_inode->write_deny;
+    // 只要是关于写文件，判断是否有其他进程正在写此文件
+    // 如果是读文件，不考虑 write_deny
+    if (flag & O_WRONLY || flag & O_RDWR) {
+        // 进入临界区前先关中断
+        enum intr_status old_status = intr_disable();
+        // 若当前没有其他进程写该文件，将其占用
+        if (!(*write_deny)) {
+            // 置为 true，避免多个进程同时写此文件
+            *write_deny = true;
+            // 恢复中断
+            intr_set_status(old_status);
+        } else {  // 直接失败返回
+            intr_set_status(old_status);
+            printk("file can't be write now, try again later\n");
+            return -1;
+        }
+    }
+    return pcb_fd_install(fd_idx);
+}
+
+/**
+ * @brief 关闭文件
+ * 
+ * @param file 
+ * @return int32_t 
+ */
+int32_t file_close(struct file* file) {
+    if (file == NULL) {
+        return -1;
+    }
+    file->fd_inode->write_deny = false;
+    inode_close(file->fd_inode);
+    // 使文件结构可用
+    file->fd_inode = NULL;
+    return 0;
 }
