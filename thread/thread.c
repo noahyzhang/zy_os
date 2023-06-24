@@ -108,6 +108,8 @@ void init_thread(struct task_struct* pthread, char* name, int prio) {
     for (uint8_t fd_idx = 3; fd_idx < MAX_FILES_OPEN_PER_PROC; fd_idx++) {
         pthread->fd_table[fd_idx] = -1;
     }
+    // 以根目录作为默认工作路径
+    pthread->cwd_inode_nr = 0;
     // 自定义的魔数，用于检测是否有栈溢出
     pthread->stack_magic = TASK_STACK_MAGIC_VALUE;
 }

@@ -109,8 +109,6 @@ struct task_struct {
     // 此任务自从上 CPU 运行后至今占用了多少 cpu 滴答数
     // 任务运行了多久
     uint32_t elapsed_ticks;
-    // 文件描述符数组
-    int32_t fd_table[MAX_FILES_OPEN_PER_PROC];
     // 用于线程在一般队列中的节点（比如：就绪队列或者其他队列）
     struct list_elem general_tag;
     // 用于线程队列 thread_all_list 中的节点
@@ -122,6 +120,10 @@ struct task_struct {
     struct virtual_addr user_process_vaddr;
     // 用户进程内存块描述符
     struct mem_block_desc u_block_desc[DESC_CNT];
+    // 已打开文件数组
+    int32_t fd_table[MAX_FILES_OPEN_PER_PROC];
+    // 进程所在的工作目录的 inode 编号
+    uint32_t cwd_inode_nr;
     // 栈的边界标记，用于检测栈的溢出
     // 这个字段因为要作为边界标记，所以必须放在结构体的末尾
     uint32_t stack_magic;
