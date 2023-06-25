@@ -10,6 +10,7 @@
 #include "kernel/memory.h"
 #include "fs/file.h"
 #include "device/console.h"
+#include "device/keyboard.h"
 
 // 默认情况下操作的是哪个分区
 struct partition* cur_part;
@@ -479,13 +480,23 @@ int32_t sys_write(int32_t fd, const void* buf, uint32_t count) {
  * @return int32_t 
  */
 int32_t sys_read(int32_t fd, void* buf, uint32_t count) {
-    if (fd < 0) {
-        printk("sys_read: fd error\n");
-        return -1;
-    }
     ASSERT(buf != NULL);
-    uint32_t g_fd = fd_local_to_global(fd);
-    return file_read(&file_table[g_fd], buf, count);
+    int32_t res = -1;
+    if (fd < 0 || fd == stdout_no || fd == stderr_no) {
+        printk("sys_read: fd error\n");
+    } else if (fd == stdin_no) {
+        char* tmp_buf = buf;
+        uint32_t bytes_read = 0;
+        for (; bytes_read < count; bytes_read++) {
+            *tmp_buf = ioq_getchar(&kbd_buf);
+            tmp_buf++;
+        }
+        res = (bytes_read == 0 ? -1 : (int32_t)bytes_read);
+    } else {
+        uint32_t g_fd = fd_local_to_global(fd);
+        res = file_read(&file_table[g_fd], buf, count);
+    }
+    return res;
 }
 
 /**
@@ -982,6 +993,15 @@ int32_t sys_stat(const char* path, struct stat* buf) {
     }
     dir_close(searched_record.parent_dir);
     return ret;
+}
+
+/**
+ * @brief 向屏幕输出一个字符
+ * 
+ * @param char_ascii 
+ */
+void sys_putchar(char char_ascii) {
+    console_put_char(char_ascii);
 }
 
 /**
