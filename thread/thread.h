@@ -124,6 +124,8 @@ struct task_struct {
     int32_t fd_table[MAX_FILES_OPEN_PER_PROC];
     // 进程所在的工作目录的 inode 编号
     uint32_t cwd_inode_nr;
+    // 父进程 pid
+    int16_t parent_pid;
     // 栈的边界标记，用于检测栈的溢出
     // 这个字段因为要作为边界标记，所以必须放在结构体的末尾
     uint32_t stack_magic;
@@ -141,6 +143,6 @@ void thread_block(enum task_status stat);
 void thread_unblock(struct task_struct* pthread);
 void thread_yield(void);
 void thread_init(void);
-
+pid_t fork_pid(void);
 
 #endif  // THREAD_THREAD_H_
