@@ -197,28 +197,28 @@ int main(void) {
     // printf("sys_open res: %d\n", res);
 
     // 目录功能测试
-    init_all();
-    int32_t res = sys_mkdir("/dir1");
-    printf("sys_mkdir res: %d\n", res);
-    res = sys_mkdir("/dir1/subdir1");
-    printf("sys_mkdir res: %d\n", res);
-    int32_t fd = sys_open("/dir1/subdir1/file1", O_CREAT | O_RDWR);
-    printf("sys_open fd: %d\n", fd);
-    res = sys_close(fd);
-    printf("sys_close res: %d\n", res);
+    // init_all();
+    // int32_t res = sys_mkdir("/dir1");
+    // printf("sys_mkdir res: %d\n", res);
+    // res = sys_mkdir("/dir1/subdir1");
+    // printf("sys_mkdir res: %d\n", res);
+    // int32_t fd = sys_open("/dir1/subdir1/file1", O_CREAT | O_RDWR);
+    // printf("sys_open fd: %d\n", fd);
+    // res = sys_close(fd);
+    // printf("sys_close res: %d\n", res);
 
-    struct dir* p_dir = sys_opendir("/dir1/subdir1");
-    if (p_dir) {
-        printf("/dir1/subdir1 open done\n");
-        res = sys_closedir(p_dir);
-        printf("sys_closedir res: %d\n", res);
-    } else {
-        printf("/dir1/subdir1 open fail\n");
-    }
-    res = sys_unlink("/dir1/subdir1/file1");
-    printf("sys_unlink res: %d\n", res);
-    res = sys_rmdir("/dir1/subdir1");
-    printf("sys_rmdir res: %d\n", res);
+    // struct dir* p_dir = sys_opendir("/dir1/subdir1");
+    // if (p_dir) {
+    //     printf("/dir1/subdir1 open done\n");
+    //     res = sys_closedir(p_dir);
+    //     printf("sys_closedir res: %d\n", res);
+    // } else {
+    //     printf("/dir1/subdir1 open fail\n");
+    // }
+    // res = sys_unlink("/dir1/subdir1/file1");
+    // printf("sys_unlink res: %d\n", res);
+    // res = sys_rmdir("/dir1/subdir1");
+    // printf("sys_rmdir res: %d\n", res);
 
     // 获取任务的工作目录
     // char cwd_buf[32] = {0};
@@ -249,9 +249,9 @@ int main(void) {
     // init_all();
 
     // 测试 shell
-    // init_all();
-    // cls_screen();
-    // console_put_str("[noahyzhang@localhost /]$ ");
+    init_all();
+    cls_screen();
+    console_put_str("[noahyzhang@localhost /]$ ");
 
     for (;;) {}
 
@@ -259,16 +259,16 @@ int main(void) {
 }
 
 void init(void) {
-    // uint32_t ret_pid = fork();
-    // if (ret_pid) {
-    //     printf("I am father process, pid: %d, child pid: %d\n", getpid(), ret_pid);
-    //     for (;;) {}
-    // } else {
-    //     printf("I am child process, pid: %d, res: %d\n", getpid(), ret_pid);
-    //     for (;;) {}
-    //     // my_shell();
-    // }
-    // panic("init: panic, wrong location");
+    uint32_t ret_pid = fork();
+    if (ret_pid) {
+        printf("I am father process, pid: %d, child pid: %d\n", getpid(), ret_pid);
+        for (;;) {}
+    } else {
+        printf("I am child process, pid: %d, res: %d\n", getpid(), ret_pid);
+        // for (;;) {}
+        my_shell();
+    }
+    panic("init: panic, wrong location");
 }
 
 void thread_consumer(void* arg) {
