@@ -18,6 +18,8 @@
 
 // task_struct 中 stack_magic 的魔数值
 #define TASK_STACK_MAGIC_VALUE (0x19971216)
+// 任务名的长度
+#define TASK_NAME_LEN 16
 // 每个线程可以打开的文件数
 #define MAX_FILES_OPEN_PER_PROC 8
 
@@ -101,7 +103,7 @@ struct task_struct {
     pid_t pid;
     // 状态
     enum task_status status;
-    char name[16];
+    char name[TASK_NAME_LEN];
     // 优先级
     uint8_t priority;
     // 每次在处理器上执行的时钟滴答数
