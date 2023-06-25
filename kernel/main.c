@@ -12,6 +12,7 @@
 #include "user_process/syscall-init.h"
 #include "lib/stdio.h"
 #include "fs/fs.h"
+#include "lib/string.h"
 
 /**
  * 注意 main 函数一定要是 main.c 文件的第一个函数，因为我们设定的从 0xc0001500 开始执行
@@ -131,8 +132,114 @@ int main(void) {
     // thread_start("thread_b", 31, k_thread_b, "argB ");
 
     // 测试文件系统
-    init_all();
-    sys_open("/file_1", O_CREAT);
+    // init_all();
+    // sys_open("/file_1", O_CREAT);
+    // 测试文件的打开、关闭
+    // uint32_t fd = sys_open("/file2", O_RDONLY | O_CREAT);
+    // printf("fd: %d\n", fd);
+    // int32_t res = sys_close(fd);
+    // printf("%d closed, res: %d\n", fd, res);
+
+    // 测试文件的写入
+    // uint32_t fd = sys_open("/file1", O_RDWR | O_CREAT);
+    // printf("fd: %d\n", fd);
+    // int32_t res = sys_write(fd, "hello world\n", 12);
+    // printf("sys_write res: %d\n", res);
+    // res = sys_close(fd);
+    // printf("%d closed, res: %d\n", fd, res);
+
+    // 测试文件的读取
+    // 如果刚写完文件就去读的话，读不到期望内容，因为文件指针此时被指向文件尾。
+    // 因此需要重新打开文件，就可以读到期望内容
+    // uint32_t fd = sys_open("/file1", O_RDWR | O_CREAT);
+    // printf("fd: %d\n", fd);
+    // int32_t res = sys_write(fd, "hello world\n", 12);
+    // printf("sys_write res: %d\n", res);
+    // res = sys_close(fd);
+    // printf("%d closed, res: %d\n", fd, res);
+
+    // uint32_t fd2 = sys_open("/file1", O_RDWR);
+    // printf("fd: %d\n", fd2);
+    // char buf[64] = {0};
+    // int32_t read_bytes = sys_read(fd2, buf, 12);
+    // printf("sys_read read_bytes: %d, content: %s\n", read_bytes, buf);
+    // memset(buf, 0, sizeof(buf));
+    // read_bytes = sys_read(fd2, buf, 8);
+    // printf("sys_read read_bytes: %d, content: %s\n", read_bytes, buf);
+    // res = sys_close(fd2);
+    // printf("fd: %d closed, res: %d\n", fd2, res);
+
+    // 测试文件读写指针偏移功能
+    // uint32_t fd = sys_open("/file1", O_RDWR | O_CREAT);
+    // printf("fd: %d\n", fd);
+    // int32_t res = sys_write(fd, "hello world\n", 12);
+    // printf("sys_write res: %d\n", res);
+    // res = sys_lseek(fd, 0, SEEK_SET);
+    // printf("sys_lseek res: %d\n", res);
+    // char buf[64] = {0};
+    // int32_t read_bytes = sys_read(fd, buf, 11);
+    // printf("sys_read read_bytes: %d, content: %s\n", read_bytes, buf);
+    // res = sys_close(fd);
+    // printf("sys_close res: %d\n", res);
+
+    // 测试文件的删除
+    // 删除文件必须要等到文件关闭才能删除
+    // uint32_t fd = sys_open("/file1", O_RDWR | O_CREAT);
+    // printf("fd: %d\n", fd);
+    // int32_t res = sys_close(fd);
+    // printf("sys_close res: %d\n", res);
+    // res = sys_unlink("/file1");
+    // printf("sys_unlink res: %d\n", res);
+    // res = sys_open("/file1", O_RDWR);
+    // printf("sys_open res: %d\n", res);
+
+    // 目录功能测试
+    // int32_t res = sys_mkdir("/dir1");
+    // printf("sys_mkdir res: %d\n", res);
+    // res = sys_mkdir("/dir1/subdir1");
+    // printf("sys_mkdir res: %d\n", res);
+    // int32_t fd = sys_open("/dir1/subdir1/file1", O_CREAT | O_RDWR);
+    // printf("sys_open fd: %d\n", fd);
+    // res = sys_close(fd);
+    // printf("sys_close res: %d\n", res);
+
+    // struct dir* p_dir = sys_opendir("/dir1/subdir1");
+    // if (p_dir) {
+    //     printf("/dir1/subdir1 open done\n");
+    //     res = sys_closedir(p_dir);
+    //     printf("sys_closedir res: %d\n", res);
+    // } else {
+    //     printf("/dir1/subdir1 open fail\n");
+    // }
+    // res = sys_unlink("/dir1/subdir1/file1");
+    // printf("sys_unlink res: %d\n", res);
+    // res = sys_rmdir("/dir1/subdir1");
+    // printf("sys_rmdir res: %d\n", res);
+
+    // 获取任务的工作目录
+    // char cwd_buf[32] = {0};
+    // char* cwd = sys_getcwd(cwd_buf, 32);
+    // printf("sys_getcwd cwd: %s, res: %s\n", cwd_buf, cwd);
+    // int32_t res = sys_mkdir("/dir1");
+    // printf("sys_mkdir res: %d\n", res);
+    // res = sys_chdir("/dir1");
+    // printf("sys_chdir res: %d\n", res);
+    // memset(cwd_buf, 0, 32);
+    // sys_getcwd(cwd_buf, 32);
+    // printf("sys_getcwd cwd: %s\n", cwd_buf);
+
+    // 获取文件属性
+    // int32_t res = sys_mkdir("/dir1");
+    // printf("sys_mkdir res: %d\n", res);
+    // struct stat obj_stat;
+    // sys_stat("/", &obj_stat);
+    // printf("i_no: %d, size: %d, filetype: %s\n",
+    //     obj_stat.st_ino, obj_stat.st_size, obj_stat.st_filetype == 2 ? "dir" : "file");
+    // struct stat obj_stat2;
+    // sys_stat("/dir1", &obj_stat2);
+    // printf("i_no: %d, size: %d, filetype: %s\n",
+    //     obj_stat2.st_ino, obj_stat2.st_size, obj_stat2.st_filetype == 2 ? "dir" : "file");
+
     for (;;) {}
 
     return 0;

@@ -484,7 +484,7 @@ int32_t sys_read(int32_t fd, void* buf, uint32_t count) {
         return -1;
     }
     ASSERT(buf != NULL);
-    uint32_t g_fd = fd_local2global(fd);
+    uint32_t g_fd = fd_local_to_global(fd);
     return file_read(&file_table[g_fd], buf, count);
 }
 
@@ -502,7 +502,7 @@ int32_t sys_lseek(int32_t fd, int32_t offset, uint8_t whence) {
         return -1;
     }
     ASSERT(whence > 0 && whence < 4);
-    uint32_t _fd = fd_local2global(fd);
+    uint32_t _fd = fd_local_to_global(fd);
     struct file* pf = &file_table[_fd];
     int32_t new_pos = 0;  // 新的偏移量必须位于文件大小之内
     int32_t file_size = (int32_t)pf->fd_inode->i_size;
@@ -957,7 +957,7 @@ int32_t sys_chdir(const char* path) {
  */
 int32_t sys_stat(const char* path, struct stat* buf) {
     // 若直接查看根目录 '/'
-    if (!strcmp(path, "/") || !strcmp(path, "/.") || !strcmp(path, "/..")) {
+    if (!strncmp(path, "/", 1) || !strncmp(path, "/.", 2) || !strncmp(path, "/..", 3)) {
         buf->st_filetype = FT_DIRECTORY;
         buf->st_ino = 0;
         buf->st_size = root_dir.inode->i_size;

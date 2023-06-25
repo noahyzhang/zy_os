@@ -4,6 +4,7 @@
 #include "thread/thread.h"
 #include "device/console.h"
 #include "lib/string.h"
+#include "fs/fs.h"
 
 #define syscall_nr 32
 
@@ -16,17 +17,6 @@ void* syscall_table[syscall_nr];
  */
 uint32_t sys_getpid(void) {
     return running_thread()->pid;
-}
-
-/**
- * @brief 简易版的 write 系统调用
- * 
- * @param str 
- * @return uint32_t 
- */
-uint32_t sys_write(char* str) {
-    console_put_str(str);
-    return strlen(str);
 }
 
 /**
