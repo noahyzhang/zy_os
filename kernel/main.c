@@ -13,6 +13,8 @@
 #include "lib/stdio.h"
 #include "fs/fs.h"
 #include "lib/string.h"
+#include "shell/shell.h"
+#include "lib/user/assert.h"
 
 /**
  * 注意 main 函数一定要是 main.c 文件的第一个函数，因为我们设定的从 0xc0001500 开始执行
@@ -243,7 +245,13 @@ int main(void) {
     //     obj_stat2.st_ino, obj_stat2.st_size, obj_stat2.st_filetype == 2 ? "dir" : "file");
 
     // 测试 fork，已经在 thread_init 中初始化了
+    // init_all();
+
+    // 测试 shell
     init_all();
+    cls_screen();
+    console_put_str("[noahyzhang@localhost /]$ ");
+
     for (;;) {}
 
     return 0;
@@ -253,10 +261,12 @@ void init(void) {
     uint32_t ret_pid = fork();
     if (ret_pid) {
         printf("I am father process, pid: %d, child pid: %d\n", getpid(), ret_pid);
+        for (;;) {}
     } else {
         printf("I am child process, pid: %d, res: %d\n", getpid(), ret_pid);
+        my_shell();
     }
-    for (;;) {}
+    panic("init: panic, wrong location");
 }
 
 void thread_consumer(void* arg) {

@@ -21,7 +21,7 @@ OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/init.o $(BUILD_DIR)/interrupt.o \
 	$(BUILD_DIR)/process.o $(BUILD_DIR)/syscall.o $(BUILD_DIR)/syscall-init.o \
 	$(BUILD_DIR)/stdio.o $(BUILD_DIR)/stdio_kernel.o  $(BUILD_DIR)/ide.o \
 	$(BUILD_DIR)/fs.o $(BUILD_DIR)/dir.o $(BUILD_DIR)/file.o $(BUILD_DIR)/inode.o \
-	$(BUILD_DIR)/fork.o
+	$(BUILD_DIR)/fork.o $(BUILD_DIR)/assert.o $(BUILD_DIR)/shell.o
 
 ##############     MBR代码编译     ############### 
 $(BUILD_DIR)/mbr.bin: boot/mbr.s
@@ -132,6 +132,12 @@ $(BUILD_DIR)/inode.o: fs/inode.c
 	$(CC) $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/fork.o: user_process/fork.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/assert.o: lib/user/assert.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/shell.o: shell/shell.c 
 	$(CC) $(CFLAGS) $< -o $@
 
 ##############    汇编代码编译    ###############
