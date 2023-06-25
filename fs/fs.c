@@ -221,7 +221,7 @@ static void partition_format(struct partition* part) {
  * @param name_store 
  * @return char* 
  */
-static char* path_parse(char* pathname, char* name_store) {
+char* path_parse(char* pathname, char* name_store) {
     // 根目录不需要单独解析
     if (pathname[0] == '/') {
         // 路径中出现1个或多个连续的字符'/',将这些'/'跳过,如"///a/b" */

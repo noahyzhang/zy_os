@@ -7,6 +7,7 @@
 #include "kernel/global.h"
 #include "lib/string.h"
 #include "lib/user/assert.h"
+#include "shell/buildin_cmd.h"
 
 // 最大支持键入128个字符的命令行输入
 #define cmd_len 128
@@ -15,9 +16,13 @@
 
 // 存储输入的命令
 static char cmd_line[cmd_len] = {0};
-
+// 路径的缓冲
+char final_path[MAX_PATH_LEN] = {0};
 // 用来记录当前目录, 是当前目录的缓存, 每次执行 cd 命令时会更新此内容
 char cwd_cache[64] = {0};
+// argv 为全局变量，为了 exec 程序可以访问参数
+char* argv[MAX_ARG_NR];
+int32_t argc = -1;
 
 /**
  * @brief 输出提示符
@@ -83,6 +88,52 @@ static void readline(char* buf, int32_t count) {
 }
 
 /**
+ * @brief 分析字符串 cmd_str 中以 token 为分隔符的单词, 将各单词的指针存入 argv 数组
+ * 
+ * @param cmd_str 
+ * @param argv 
+ * @param token 
+ * @return int32_t 
+ */
+static int32_t cmd_parse(char* cmd_str, char** argv, char token) {
+    assert(cmd_str != NULL);
+    int32_t arg_idx = 0;
+    while (arg_idx < MAX_ARG_NR) {
+        argv[arg_idx] = NULL;
+        arg_idx++;
+    }
+    char* next = cmd_str;
+    int32_t argc = 0;
+    // 外层循环处理整个命令行
+    while (*next) {
+        // 去除命令字或参数之间的空格
+        while (*next == token) {
+            next++;
+        }
+        // 处理最后一个参数后接空格的情况, 如 "ls dir2 "
+        if (*next == 0) {
+            break;
+        }
+        argv[argc] = next;
+        // 内层循环处理命令行中的每个命令字及参数
+        while (*next && *next != token) {  // 在字符串结束前找单词分隔符
+            next++;
+        }
+        // 如果未结束(是token字符), 使 token 变成 0
+        if (*next) {
+            // 将 token 字符替换为字符串结束符 0, 做为一个单词的结束, 并将字符指针 next 指向下一个字符
+            *next++ = 0;
+        }
+        // 避免 argv 数组访问越界, 参数过多则返回 0
+        if (argc > MAX_ARG_NR) {
+            return -1;
+        }
+        argc++;
+    }
+    return argc;
+}
+
+/**
  * @brief 简易 shell
  * 
  */
@@ -90,10 +141,22 @@ void my_shell(void) {
     cwd_cache[0] = '/';
     while (1) {
         print_prompt();
-        memset(cmd_line, 0, cmd_len);
-        readline(cmd_line, cmd_len);
+        memset(final_path, 0, MAX_PATH_LEN);
+        memset(cmd_line, 0, MAX_PATH_LEN);
+        readline(cmd_line, MAX_PATH_LEN);
         if (cmd_line[0] == 0) {  // 若只键入了一个回车
             continue;
+        }
+        argc = -1;
+        argc = cmd_parse(cmd_line, argv, ' ');
+        if (argc == -1) {
+            printf("num of arguments exceed %d\n", MAX_ARG_NR);
+            continue;
+        }
+        char buf[MAX_PATH_LEN] = {0};
+        for (int32_t arg_idx = 0; arg_idx < argc; arg_idx++) {
+            make_clear_abs_path(argv[arg_idx], buf);
+            printf("%s -> %s\n", argv[arg_idx], buf);
         }
     }
     panic("my_shell: should not be here");

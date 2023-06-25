@@ -144,5 +144,6 @@ void thread_unblock(struct task_struct* pthread);
 void thread_yield(void);
 void thread_init(void);
 pid_t fork_pid(void);
+void sys_ps(void);
 
 #endif  // THREAD_THREAD_H_

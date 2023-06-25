@@ -7,6 +7,9 @@
 #include "kernel/debug.h"
 #include "user_process/process.h"
 #include "thread/sync.h"
+#include "fs/fs.h"
+#include "fs/file.h"
+#include "lib/stdio.h"
 
 #define MAIN_THREAD_PRIO_VALUE (31)
 
@@ -254,6 +257,99 @@ void thread_yield(void) {
     intr_set_status(old_status);
 }
 
+/**
+ * @brief 以填充空格的方式输出 buf
+ * 
+ * @param buf 
+ * @param buf_len 
+ * @param ptr 
+ * @param format 
+ */
+static void pad_print(char* buf, int32_t buf_len, void* ptr, char format) {
+    memset(buf, 0, buf_len);
+    uint8_t out_pad_0idx = 0;
+    switch (format) {
+    case 's':
+        out_pad_0idx = snprintf(buf, buf_len, "%s", ptr);
+        break;
+    case 'd':
+        out_pad_0idx = snprintf(buf, buf_len, "%d", *((int16_t*)ptr));
+        out_pad_0idx = snprintf(buf, buf_len, "%x", *((uint32_t*)ptr));
+        break;
+    case 'x':
+        out_pad_0idx = snprintf(buf, buf_len, "%x", *((uint32_t*)ptr));
+        break;
+    }
+    while (out_pad_0idx < buf_len) {  // 以空格填充
+        buf[out_pad_0idx] = ' ';
+        out_pad_0idx++;
+    }
+    sys_write(stdout_no, buf, buf_len - 1);
+}
+
+/**
+ * @brief 用于在 list_traversal 函数中的回调函数, 用于针对线程队列的处理
+ * 
+ * @param p_elem 
+ * @param UNUSED 
+ * @return true 
+ * @return false 
+ */
+static bool elem2thread_info(struct list_elem* p_elem, int arg) {
+    (void)arg;
+    struct task_struct* pthread = elem2entry(struct task_struct, all_list_tag, p_elem);
+    char out_pad[16] = {0};
+    pad_print(out_pad, 16, &pthread->pid, 'd');
+    if (pthread->parent_pid == -1) {
+        pad_print(out_pad, 16, "NULL", 's');
+    } else {
+        pad_print(out_pad, 16, &pthread->parent_pid, 'd');
+    }
+    switch (pthread->status) {
+    case 0:
+        pad_print(out_pad, 16, "RUNNING", 's');
+        break;
+    case 1:
+        pad_print(out_pad, 16, "READY", 's');
+        break;
+    case 2:
+        pad_print(out_pad, 16, "BLOCKED", 's');
+        break;
+    case 3:
+        pad_print(out_pad, 16, "WAITING", 's');
+        break;
+    case 4:
+        pad_print(out_pad, 16, "HANGING", 's');
+        break;
+    case 5:
+        pad_print(out_pad, 16, "DIED", 's');
+        break;
+    }
+    pad_print(out_pad, 16, &pthread->elapsed_ticks, 'x');
+
+    memset(out_pad, 0, 16);
+    ASSERT(strlen(pthread->name) < 17);
+    memcpy(out_pad, pthread->name, strlen(pthread->name));
+    strcat(out_pad, "\n");
+    sys_write(stdout_no, out_pad, strlen(out_pad));
+    // 此处返回 false 是为了迎合主调函数 list_traversal, 只有回调函数返回 false 时才会继续调用此函数
+    return false;
+}
+
+/**
+ * @brief 打印任务列表
+ * 
+ */
+void sys_ps(void) {
+    char* ps_title = "PID            PPID           STAT           TICKS          COMMAND\n";
+    sys_write(stdout_no, ps_title, strlen(ps_title));
+    list_traversal(&thread_all_list, elem2thread_info, 0);
+}
+
+/**
+ * @brief 初始化线程
+ * 
+ */
 void thread_init(void) {
     put_str("thread_init start\n");
     list_init(&thread_ready_list);
