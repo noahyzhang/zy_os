@@ -26,6 +26,7 @@ void k_thread_b(void*);
 void thread_consumer(void*);
 void u_process_a(void);
 void u_process_b(void);
+void init(void);
 int test_var_a = 0, test_var_b = 0;
 int process_a_pid = 0, process_b_pid = 0;
 
@@ -229,6 +230,7 @@ int main(void) {
     // printf("sys_getcwd cwd: %s\n", cwd_buf);
 
     // 获取文件属性
+    // init_all();
     // int32_t res = sys_mkdir("/dir1");
     // printf("sys_mkdir res: %d\n", res);
     // struct stat obj_stat;
@@ -240,9 +242,21 @@ int main(void) {
     // printf("i_no: %d, size: %d, filetype: %s\n",
     //     obj_stat2.st_ino, obj_stat2.st_size, obj_stat2.st_filetype == 2 ? "dir" : "file");
 
+    // 测试 fork，已经在 thread_init 中初始化了
+    init_all();
     for (;;) {}
 
     return 0;
+}
+
+void init(void) {
+    uint32_t ret_pid = fork();
+    if (ret_pid) {
+        printf("I am father process, pid: %d, child pid: %d\n", getpid(), ret_pid);
+    } else {
+        printf("I am child process, pid: %d, res: %d\n", getpid(), ret_pid);
+    }
+    for (;;) {}
 }
 
 void thread_consumer(void* arg) {

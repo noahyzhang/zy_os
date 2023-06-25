@@ -21,12 +21,12 @@ else
     file /usr/share/vgabios/vgabios.bin
 fi
 
-if [ -e hd80M.img ];then
-    echo -e  "n\np\n1\n\n+4M\nn\ne\n2\n\n\nn\n\n+5M\nn\n\n+6M\nn\n\n+7M\nn\n\n+8M\nn\n\n+9M\nn\n\n\nw\n" | fdisk hd80M.img &> /dev/null
-else
-    echo "no hd80M.img!"
-    exit 1
-fi
+# if [ -e hd80M.img ];then
+#     echo -e  "n\np\n1\n\n+4M\nn\ne\n2\n\n\nn\n\n+5M\nn\n\n+6M\nn\n\n+7M\nn\n\n+8M\nn\n\n+9M\nn\n\n\nw\n" | fdisk hd80M.img &> /dev/null
+# else
+#     echo "no hd80M.img!"
+#     exit 1
+# fi
 
 echo "check over ...."
 sleep 1

@@ -20,7 +20,8 @@ OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/init.o $(BUILD_DIR)/interrupt.o \
 	$(BUILD_DIR)/keyboard.o $(BUILD_DIR)/io_queue.o $(BUILD_DIR)/tss.o \
 	$(BUILD_DIR)/process.o $(BUILD_DIR)/syscall.o $(BUILD_DIR)/syscall-init.o \
 	$(BUILD_DIR)/stdio.o $(BUILD_DIR)/stdio_kernel.o  $(BUILD_DIR)/ide.o \
-	$(BUILD_DIR)/fs.o $(BUILD_DIR)/dir.o $(BUILD_DIR)/file.o $(BUILD_DIR)/inode.o
+	$(BUILD_DIR)/fs.o $(BUILD_DIR)/dir.o $(BUILD_DIR)/file.o $(BUILD_DIR)/inode.o \
+	$(BUILD_DIR)/fork.o
 
 ##############     MBR代码编译     ############### 
 $(BUILD_DIR)/mbr.bin: boot/mbr.s
@@ -130,6 +131,9 @@ $(BUILD_DIR)/file.o: fs/file.c
 $(BUILD_DIR)/inode.o: fs/inode.c
 	$(CC) $(CFLAGS) $< -o $@
 
+$(BUILD_DIR)/fork.o: user_process/fork.c
+	$(CC) $(CFLAGS) $< -o $@
+
 ##############    汇编代码编译    ###############
 $(BUILD_DIR)/kernel.o: kernel/kernel.s
 	$(AS) $(ASFLAGS) $< -o $@
@@ -149,9 +153,17 @@ mk_dir:
 
 mk_img:
 	if [ ! -e $(MASTER_DISK_IMG) ];then bximage -q -func="create" -hd=60 -imgmode="flat" -sectsize=512 $(MASTER_DISK_IMG);fi
-	if [ ! -e $(SLAVE_DISK_IMG) ];then bximage -q -func="create" -hd=80 -imgmode="flat" -sectsize=512 ${SLAVE_DISK_IMG};fi
-	# if [ -e $(SLAVE_DISK_IMG) ];then echo -e  "n\np\n1\n\n+4M\nn\ne\n2\n\n\nn\n\n+5M\nn\n\n+6M\nn\n\n+7M\nn\n\n+8M\nn\n\n+9M\nn\n\n\nw\n" | fdisk $(SLAVE_DISK_IMG) &> /dev/null; fi
 	# if [ ! -e $(MASTER_DISK_IMG) ];then qemu-img create -u $(MASTER_DISK_IMG) 60M;fi
+
+mk_disk:
+	if [ ! -e $(SLAVE_DISK_IMG) ]; then \
+		bximage -q -func="create" -hd=80 -imgmode="flat" -sectsize=512 $(SLAVE_DISK_IMG); \
+	fi
+
+format_disk:
+	if [ -e $(SLAVE_DISK_IMG) ]; then \
+		echo "n\np\n1\n\n+4M\nn\ne\n2\n\n\nn\n\n+5M\nn\n\n+6M\nn\n\n+7M\nn\n\n+8M\nn\n\n+9M\nn\n\n\nw\n" | fdisk $(SLAVE_DISK_IMG); \
+	fi
 
 hd:
 	dd if=$(BUILD_DIR)/mbr.bin of=hd60M.img bs=512 count=1  conv=notrunc
@@ -165,7 +177,7 @@ clean:
 
 build: $(BUILD_DIR)/kernel.bin $(BUILD_DIR)/mbr.bin $(BUILD_DIR)/loader.bin
 
-all: mk_dir mk_img build hd
+all: mk_dir mk_img mk_disk format_disk build hd
 
 bochs:
 	bochs -f bochsrc.disk

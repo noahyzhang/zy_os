@@ -52,7 +52,7 @@ static int32_t copy_pcb_vaddrbitmap_stack0(struct task_struct* child_thread, str
  */
 static void copy_body_stack3(struct task_struct* child_thread, struct task_struct* parent_thread, void* buf_page) {
     uint8_t* vaddr_btmp = parent_thread->user_process_vaddr.vaddr_bitmap.bits;
-    uint8_t* btmp_bytes_len = parent_thread->user_process_vaddr.vaddr_bitmap.bmap_bytes_len;
+    uint8_t btmp_bytes_len = parent_thread->user_process_vaddr.vaddr_bitmap.bmap_bytes_len;
     uint32_t vaddr_start = parent_thread->user_process_vaddr.vaddr_start;
     uint32_t idx_byte = 0;
     uint32_t idx_bit = 0;
@@ -158,6 +158,8 @@ static int32_t copy_process(struct task_struct* child_thread, struct task_struct
     // 4. 构建子进程 thread_stack 和修改返回 pid
     build_child_stack(child_thread);
     // 5. 更新文件 inode 的打开数
+    update_inode_open_cnts(child_thread);
+
     mfree_page(PF_KERNEL, buf_page, 1);
     return 0;
 }
