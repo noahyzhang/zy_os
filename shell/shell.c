@@ -9,13 +9,11 @@
 #include "lib/user/assert.h"
 #include "shell/buildin_cmd.h"
 
-// 最大支持键入128个字符的命令行输入
-#define cmd_len 128
 // 加上命令名外,最多支持15个参数
 #define MAX_ARG_NR 16
 
 // 存储输入的命令
-static char cmd_line[cmd_len] = {0};
+static char cmd_line[MAX_PATH_LEN] = {0};
 // 路径的缓冲
 char final_path[MAX_PATH_LEN] = {0};
 // 用来记录当前目录, 是当前目录的缓存, 每次执行 cd 命令时会更新此内容
@@ -153,11 +151,34 @@ void my_shell(void) {
             printf("num of arguments exceed %d\n", MAX_ARG_NR);
             continue;
         }
-        char buf[MAX_PATH_LEN] = {0};
-        for (int32_t arg_idx = 0; arg_idx < argc; arg_idx++) {
-            make_clear_abs_path(argv[arg_idx], buf);
-            printf("%s -> %s\n", argv[arg_idx], buf);
+        if (!strncmp("ls", argv[0], 2)) {
+            buildin_ls(argc, argv);
+        } else if (!strncmp("cd", argv[0], 2)) {
+            if (buildin_cd(argc, argv) != NULL) {
+                memset(cwd_cache, 0, MAX_PATH_LEN);
+                strncpy(cwd_cache, final_path, sizeof(cwd_cache));
+            }
+        } else if (!strncmp("pwd", argv[0], 3)) {
+            buildin_pwd(argc, argv);
+        } else if (!strncmp("ps", argv[0], 2)) {
+            buildin_ps(argc, argv);
+        } else if (!strncmp("clear", argv[0], 5)) {
+            buildin_clear(argc, argv);
+        } else if (!strncmp("mkdir", argv[0], 5)) {
+            buildin_mkdir(argc, argv);
+        } else if (!strncmp("rmdir", argv[0], 5)) {
+            buildin_rmdir(argc, argv);
+        } else if (!strncmp("rm", argv[0], 2)) {
+            buildin_rm(argc, argv);
+        } else {
+            printf("external command\n");
         }
+
+        // char buf[MAX_PATH_LEN] = {0};
+        // for (int32_t arg_idx = 0; arg_idx < argc; arg_idx++) {
+        //     make_clear_abs_path(argv[arg_idx], buf);
+        //     printf("%s -> %s\n", argv[arg_idx], buf);
+        // }
     }
     panic("my_shell: should not be here");
 }
