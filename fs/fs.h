@@ -17,7 +17,7 @@
 
 // 每个分区所支持最大创建的文件数
 #define MAX_FILES_PER_PART 4096
-//每扇区的位数
+// 每扇区的位数, 512*8=4096
 #define BITS_PER_SECTOR 4096
 // 扇区字节大小
 #define SECTOR_SIZE 512
@@ -32,11 +32,11 @@
  */
 enum file_types {
     // 不支持的文件类型
-    FT_UNKNOWN,
+    FT_UNKNOWN = 0,
     // 普通文件
-    FT_REGULAR,
+    FT_REGULAR = 1,
     // 目录
-    FT_DIRECTORY
+    FT_DIRECTORY = 2
 };
 
 /**

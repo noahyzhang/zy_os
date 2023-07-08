@@ -23,13 +23,15 @@
 
 /**
  * @brief 目录结构
- * 
+ * 在内存中创建的结构，不会写入磁盘
+ * 用于与目录相关的操作
  */
 struct dir {
+    // 该 inode 一般是 ”已打开的 inode 队列”
     struct inode* inode;
     // 记录在目录内的偏移
     uint32_t dir_pos;
-    // 目录的数据缓存
+    // 目录的数据缓存，比如读取目录时，用来存储返回的目录项
     uint8_t dir_buf[512];
 };
 
