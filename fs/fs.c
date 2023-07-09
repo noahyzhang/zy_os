@@ -16,19 +16,22 @@
 struct partition* cur_part;
 
 /**
- * @brief 在分区链表中找到名为 part_name 的分区,并将其指针赋值给 cur_part
+ * @brief 在分区链表中找到名为 part_name 的分区, 并将其指针赋值给 cur_part
  * 
- * @param pelem 
- * @param arg 
+ * @param pelem 分区 partition 中的 part_tag 的地址
+ * @param arg 分区名
  * @return true 
  * @return false 
  */
 static bool mount_partition(struct list_elem* pelem, int arg) {
     char* part_name = (char*)arg;
+    // 将 pelem 还原成分区 part
     struct partition* part = elem2entry(struct partition, part_tag, pelem);
     if (!strncmp(part->name, part_name, strlen(part_name))) {
         cur_part = part;
         struct disk* hd = cur_part->my_disk;
+
+        /*************************** 读取分区的超级块，写入内存中 ********************************/
         // sb_buf 用来存储从硬盘上读入的超级块
         struct super_block* sb_buf = (struct super_block*)sys_malloc(SECTOR_SIZE);
         // 在内存中创建分区 cur_part 的超级块
@@ -42,7 +45,7 @@ static bool mount_partition(struct list_elem* pelem, int arg) {
         // 把 sb_buf 中超级块的信息复制到分区的超级块 sb 中
         memcpy(cur_part->sb, sb_buf, sizeof(struct super_block));
 
-        /**********     将硬盘上的块位图读入到内存    ****************/
+        /************************** 读取分区上的空闲块位图，写入到内存 ********************************/
         cur_part->block_bitmap.bits = (uint8_t*)sys_malloc(sb_buf->block_bitmap_sects * SECTOR_SIZE);
         if (cur_part->block_bitmap.bits == NULL) {
             PANIC("alloc memory failed!");
@@ -50,22 +53,21 @@ static bool mount_partition(struct list_elem* pelem, int arg) {
         cur_part->block_bitmap.bmap_bytes_len = sb_buf->block_bitmap_sects * SECTOR_SIZE;
         // 从硬盘上读入块位图到分区的 block_bitmap.bits
         ide_read(hd, sb_buf->block_bitmap_lba, cur_part->block_bitmap.bits, sb_buf->block_bitmap_sects);
-        /*************************************************************/
 
-        /**********     将硬盘上的inode位图读入到内存    ************/
+        /************************** 读取分区上的 inode 位图，写入到内存 **********************************/
         cur_part->inode_bitmap.bits = (uint8_t*)sys_malloc(sb_buf->inode_bitmap_sects * SECTOR_SIZE);
         if (cur_part->inode_bitmap.bits == NULL) {
-        PANIC("alloc memory failed!");
+            PANIC("alloc memory failed!");
         }
         cur_part->inode_bitmap.bmap_bytes_len = sb_buf->inode_bitmap_sects * SECTOR_SIZE;
         // 从硬盘上读入 inode 位图到分区的 inode_bitmap.bits
         ide_read(hd, sb_buf->inode_bitmap_lba, cur_part->inode_bitmap.bits, sb_buf->inode_bitmap_sects);
-        /*************************************************************/
 
+        // 初始化分区的 open_inodes 列表
         list_init(&cur_part->open_inodes);
         printk("mount %s done!\n", part->name);
 
-        // 此处返回 true 是为了迎合主调函数 list_traversal 的实现,与函数本身功能无关
+        // 此处返回 true 是为了迎合主调函数 list_traversal 的实现, 与函数本身功能无关
         // 只有返回 true 时 list_traversal 才会停止遍历, 减少了后面元素无意义的遍历
         return true;
     }
@@ -1047,7 +1049,7 @@ void filesys_init(void) {
         dev_no = 0;
         // 遍历通道中的硬盘
         while (dev_no < 2) {
-            if (dev_no == 0) {   // 跨过裸盘hd60M.img
+            if (dev_no == 0) {   // 跨过裸盘 hd60M.img
                 dev_no++;
                 continue;
             }
@@ -1058,18 +1060,20 @@ void filesys_init(void) {
                 if (part_idx == 4) {  // 开始处理逻辑分区
                     part = hd->logic_parts;
                 }
-                // channels数组是全局变量,默认值为0,disk属于其嵌套结构,
-                // partition又为disk的嵌套结构,因此partition中的成员默认也为0.
-                // 若partition未初始化,则partition中的成员仍为0
+                // channels 数组是全局变量, 默认值为 0, disk 属于其嵌套结构,
+                // partition 又为 disk 的嵌套结构, 因此 partition 中的成员默认也为 0.
+                // 若 partition 未初始化, 则 partition 中的成员仍为 0
                 // 下面处理存在的分区
+                // 我们在扫描分区表的时候，只要分区不存在，分区 part 中任意成员的值都会是 0
+                // 这里使用扇区个数这个字段来判断
                 if (part->sec_cnt != 0) {  // 如果分区存在
                     memset(sb_buf, 0, SECTOR_SIZE);
-                    // 读出分区的超级块,根据魔数是否正确来判断是否存在文件系统
+                    // 读出分区的超级块, 根据魔数是否正确来判断是否存在文件系统
                     ide_read(hd, part->start_lba + 1, sb_buf, 1);
-                    // 只支持自己的文件系统.若磁盘上已经有文件系统就不再格式化了
+                    // 只支持自己的文件系统. 若磁盘上已经有文件系统就不再格式化了
                     if (sb_buf->magic == SUPER_BLOCK_MAGIC) {
                         printk("%s has filesystem\n", part->name);
-                    } else {  // 其它文件系统不支持,一律按无文件系统处理
+                    } else {  // 其它文件系统不支持, 一律按无文件系统处理，重新进行初始化
                         printk("formatting %s`s partition %s......\n", hd->name, part->name);
                         partition_format(part);
                     }
@@ -1083,9 +1087,16 @@ void filesys_init(void) {
     }
     sys_free(sb_buf);
 
+    /**
+     * 一般来说，操作系统是安装在磁盘上某个分区之上的。这样做的话，得先在磁盘上创建好分区，然后在加载内核
+     * 但这样做较为麻烦，相当于我们还没有写操作系统前，先来写一个文件系统。
+     * 因此我们直接选择待操作的分区
+    */
+
     // 确定默认操作的分区
     char default_part[8] = "sdb1";
     // 挂载分区
+    // mount_partition(default_part) 返回 true 会结束，或者 partition_list 遍历完后会结束
     list_traversal(&partition_list, mount_partition, (int)default_part);
     // 将当前分区的根目录打开
     open_root_dir(cur_part);
