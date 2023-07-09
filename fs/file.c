@@ -14,12 +14,14 @@
 
 /**
  * @brief 文件表
- * 
+ * 存储的就是文件结构，他是全局的
+ * 最多可以打开 MAX_FILE_OPEN 次文件
+ * 注意一个文件可以被多次打开，甚至把 file_table 占满
  */
 struct file file_table[MAX_FILE_OPEN];
 
 /**
- * @brief 从文件表 file_table 中获取一个空闲位,成功返回下标,失败返回 -1
+ * @brief 从文件表 file_table 中获取一个空闲位, 成功返回下标,失败返回 -1
  * 
  * @return int32_t 
  */
@@ -47,7 +49,7 @@ int32_t pcb_fd_install(int32_t globa_fd_idx) {
     struct task_struct* cur = running_thread();
     uint8_t local_fd_idx = 3;  // 跨过 stdin,stdout,stderr
     for (; local_fd_idx < MAX_FILES_OPEN_PER_PROC; local_fd_idx++) {
-        if (cur->fd_table[local_fd_idx] == -1) {  // -1表示 free_slot, 可用
+        if (cur->fd_table[local_fd_idx] == -1) {  // -1 表示 free_slot, 可用
             cur->fd_table[local_fd_idx] = globa_fd_idx;
             break;
         }
