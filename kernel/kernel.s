@@ -8,19 +8,21 @@ section .data
 global intr_entry_table
 intr_entry_table:
 
+; 定义 VECTOR 宏
 %macro VECTOR 2
 section .text
-intr%1entry:		 ; 每个中断处理程序都要压入中断向量号,所以一个中断类型一个中断处理程序，自己知道自己的中断向量号是多少
-
-   %2				 ; 中断若有错误码会压在eip后面 
-; 以下是保存上下文环境
+; 每个中断处理程序都要压入中断向量号,所以一个中断类型一个中断处理程序，自己知道自己的中断向量号是多少
+intr%1entry:
+   ; 中断若有错误码会压在eip后面 
+   %2			
+   ; 以下是保存上下文环境
    push ds
    push es
    push fs
    push gs
-   pushad			 ; PUSHAD指令压入32位寄存器,其入栈顺序是: EAX,ECX,EDX,EBX,ESP,EBP,ESI,EDI
+   pushad			 ; PUSHAD 指令压入32位寄存器,其入栈顺序是: EAX,ECX,EDX,EBX,ESP,EBP,ESI,EDI
 
-   ; 如果是从片上进入的中断,除了往从片上发送EOI外,还要往主片上发送EOI 
+   ; 如果是从片上进入的中断, 除了往从片上发送 EOI 外, 还要往主片上发送 EOI 
    mov al,0x20                   ; 中断结束命令EOI
    out 0xa0,al                   ; 向从片发送
    out 0x20,al                   ; 向主片发送
