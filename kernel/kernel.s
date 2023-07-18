@@ -16,19 +16,28 @@ intr%1entry:
    ; 中断若有错误码会压在eip后面 
    %2			
    ; 以下是保存上下文环境
+   ; 保存 4 个段寄存器
    push ds
    push es
    push fs
    push gs
-   pushad			 ; PUSHAD 指令压入32位寄存器,其入栈顺序是: EAX,ECX,EDX,EBX,ESP,EBP,ESI,EDI
+   ; pushad: push all double word register 压入 8 个通用寄存器
+   ; PUSHAD 指令压入32位寄存器,其入栈顺序是: EAX,ECX,EDX,EBX,ESP,EBP,ESI,EDI
+   pushad
 
+   ; 因为我们设置了手动向 8259A 发送中断结束标识（也就是 ICW4 中的 AEOI 位为 0）
+   ; 因此这里需要通过 OCW2 来设置中断结束
    ; 如果是从片上进入的中断, 除了往从片上发送 EOI 外, 还要往主片上发送 EOI 
-   mov al,0x20                   ; 中断结束命令EOI
+   ; OCW2 格式，设置 EOI 位为 1，发送 EOI 信号结束中断
+   mov al,0x20                   ; 中断结束命令 EOI
    out 0xa0,al                   ; 向从片发送
    out 0x20,al                   ; 向主片发送
 
-   push %1			 ; 不管idt_table中的目标程序是否需要参数,都一律压入中断向量号,调试时很方便
-   call [idt_table + %1*4]       ; 调用idt_table中的C版本中断处理函数
+   ; 不管 idt_table 中的目标程序是否需要参数, 都一律压入中断向量号, 用于调试时很方便
+   push %1
+   ; 调用 idt_table 中的 C 语言版本中断处理函数
+   call [idt_table + %1*4]
+   ; 该恢复上下文了
    jmp intr_exit
 
 section .data
@@ -38,14 +47,18 @@ section .data
 section .text
 global intr_exit
 intr_exit:	     
-; 以下是恢复上下文环境
-   add esp, 4			   ; 跳过中断号
+   ; 以下是恢复上下文环境
+   ; 跳过中断号, 当前压入中断号是为了调试方便
+   add esp, 4
+   ; popad: pop all double word register
    popad
    pop gs
    pop fs
    pop es
    pop ds
-   add esp, 4			   ; 跳过error_code
+   ; 跳过 error_code
+   add esp, 4
+   ; iret 指令有两个功能，一是从中断返回，二是返回到调用自己执行的那个旧任务
    iretd
 
 VECTOR 0x00,ZERO
