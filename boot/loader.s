@@ -245,7 +245,7 @@ jmp SELECTOR_CODE:enter_kernel	  ; 强制刷新流水线,更新 gdt
 ; ---------------------------------------------------------------------------
 enter_kernel:    
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    call kernel_init
+    ; call kernel_init
     mov esp, 0xc009f000
     jmp KERNEL_ENTRY_POINT  ; 内核起始地址存储在 0xc0001500
 

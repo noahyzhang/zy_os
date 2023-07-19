@@ -159,6 +159,10 @@ $(BUILD_DIR)/switch.o: thread/switch.s
 $(BUILD_DIR)/kernel.bin: $(OBJS)
 	$(LD) $(LDFLAGS) $^ -o $@
 
+$(BUILD_DIR)/kernel_text.bin: $(BUILD_DIR)/kernel.bin
+	objcopy -O binary $(BUILD_DIR)/kernel.bin $(BUILD_DIR)/kernel_text.bin
+	nm $(BUILD_DIR)/kernel.bin | sort > $(BUILD_DIR)/kernel_text.map
+
 .PHONY : mk_dir hd clean all
 
 mk_dir:
@@ -181,14 +185,14 @@ format_disk:
 hd:
 	dd if=$(BUILD_DIR)/mbr.bin of=hd60M.img bs=512 count=1  conv=notrunc
 	dd if=$(BUILD_DIR)/loader.bin of=hd60M.img bs=512 count=4 seek=2 conv=notrunc
-	dd if=$(BUILD_DIR)/kernel.bin \
+	dd if=$(BUILD_DIR)/kernel_text.bin \
            of=hd60M.img \
            bs=512 count=200 seek=6 conv=notrunc
 
 clean:
 	cd $(BUILD_DIR) && rm -f ./* && rm ../$(MASTER_DISK_IMG) && rm ../${SLAVE_DISK_IMG}
 
-build: $(BUILD_DIR)/kernel.bin $(BUILD_DIR)/mbr.bin $(BUILD_DIR)/loader.bin
+build: $(BUILD_DIR)/kernel_text.bin $(BUILD_DIR)/mbr.bin $(BUILD_DIR)/loader.bin
 
 all: mk_dir mk_img mk_disk format_disk build hd
 
