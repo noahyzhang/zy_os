@@ -33,7 +33,9 @@
 // device寄存器的一些关键位
 // 第7位和第5位固定为 1
 #define BIT_DEV_MBS  0xa0
+// device 寄存器的 LBA 位，表示寻址模式使用 LBA 还是 CHS
 #define BIT_DEV_LBA  0x40
+// device 寄存器的 dev 位，0 代表主盘，1 代表从盘
 #define BIT_DEV_DEV  0x10
 
 // 一些硬盘操作的指令
@@ -93,9 +95,10 @@ struct partition_table_entry {
 struct boot_sector {
     // 引导代码
     uint8_t  other[446];
-    // 分区表中有4项,共64字节
+    // 分区表中有4项, 一项 16 字节，共64字节
     struct   partition_table_entry partition_table[4];
-    // 启动扇区的结束标志是0x55,0xaa
+    // 启动扇区的结束标志是 0x55,0xaa
+    // 注意：x86 是小端存储，所以此处变量的实际值是 0xaa55
     uint16_t signature;
 } __attribute__((packed));
 
@@ -155,6 +158,10 @@ static void cmd_out(struct ide_channel* channel, uint8_t cmd) {
 
 /**
  * @brief 硬盘读入 sec_cnt 个扇区的数据到 buf
+ * 注意，读写扇区数端口 0x1f2 和 0x172 是 8 位寄存器
+ * 所以，每次读写最多是 255 个扇区
+ * 当写入端口值为 0 时，则表示读写 256 个扇区
+ * 因此当读写的端口数超过 256 时，必须拆分成多次读写操作
  * 
  * @param hd 
  * @param buf 
@@ -168,6 +175,7 @@ static void read_from_sector(struct disk* hd, void* buf, uint8_t sec_cnt) {
     } else {
         size_in_byte = sec_cnt * 512;
     }
+    // (size_in_byte/2): 一次读 2 字节，所以这里除以 2
     insw(reg_data(hd->my_channel), buf, size_in_byte / 2);
 }
 
@@ -190,8 +198,10 @@ static void write2sector(struct disk* hd, void* buf, uint8_t sec_cnt) {
 }
 
 /**
- * @brief 等待30秒
- * 
+ * @brief 最多等待30秒, 直到硬盘数据准备就绪，可以读取
+ * 为什么要等待硬盘 30 秒呢？
+ * 在 ata 手册中说：All actions required in this state shall be completed within 31 s
+ * 也就是说，所有的操作都应该在 31 秒内完成，所以我们在 30 秒内等待硬盘响应
  * @param hd 
  * @return true 
  * @return false 
@@ -222,6 +232,8 @@ static bool busy_wait(struct disk* hd) {
 void ide_read(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt) {
     ASSERT(lba <= max_lba);
     ASSERT(sec_cnt > 0);
+    // 这里加锁保护，保证硬盘的中断和硬盘的操作是相互对应的
+    // 也就是保证一次只操作同一通道上的一块硬盘
     lock_acquire(&hd->my_channel->lock);
     // 1. 先选择操作的硬盘
     select_disk(hd);
@@ -230,10 +242,11 @@ void ide_read(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt) {
     // 已完成的扇区数
     uint32_t secs_done = 0;
     while (secs_done < sec_cnt) {
+        // 设置单次操作的扇区数为 256 个扇区
         if ((secs_done + 256) <= sec_cnt) {
-        secs_op = 256;
+            secs_op = 256;
         } else {
-        secs_op = sec_cnt - secs_done;
+            secs_op = sec_cnt - secs_done;
         }
         // 2. 写入待读入的扇区数和起始扇区号
         select_sector(hd, lba + secs_done, secs_op);
@@ -246,6 +259,7 @@ void ide_read(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt) {
         sema_down(&hd->my_channel->disk_done);
         // 4. 检测硬盘状态是否可读
         // 醒来后开始执行下面代码
+        // 如果失败，即等待了 30 秒磁盘依然在繁忙或者磁盘未准备好数据，直接报错出来
         if (!busy_wait(hd)) {
             char error[64];
             snprintf(error, sizeof(error) - 1, "%s read sector %d failed!!!!!!\n", hd->name, lba);
@@ -308,6 +322,8 @@ void ide_write(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt) {
 
 /**
  * @brief 将 dst 中 len 个相邻字节交换位置后存入 buf
+ * 用于处理 identify 命令的返回信息，因为硬盘参数信息是以字为单位的
+ * 所以要处理小端的字节序
  * 
  * @param dst 
  * @param buf 
@@ -342,15 +358,19 @@ static void identify_disk(struct disk* hd) {
         snprintf(error, sizeof(error)-1, "%s identify failed!!!!!!\n", hd->name);
         PANIC(error);
     }
+    // 读取一个扇区就够了
     read_from_sector(hd, id_info, 1);
 
     char buf[64];
     uint8_t sn_start = 10 * 2, sn_len = 20, md_start = 27 * 2, md_len = 40;
+    // [10, 19] 是硬盘序列号，长度为 20 的字符串
     swap_pairs_bytes(&id_info[sn_start], buf, sn_len);
     printk("   disk %s info:\n      SN: %s\n", hd->name, buf);
     memset(buf, 0, sizeof(buf));
+    // [27, 46] 是硬盘型号，长度为 40 的字符串
     swap_pairs_bytes(&id_info[md_start], buf, md_len);
     printk("      MODULE: %s\n", buf);
+    // [60, 61] 是可供用户使用的扇区数，长度为 2 的整型
     uint32_t sectors = *(uint32_t*)&id_info[60 * 2];
     printk("      SECTORS: %d\n", sectors);
     printk("      CAPACITY: %dMB\n", sectors * 512 / 1024 / 1024);
@@ -363,11 +383,12 @@ static void identify_disk(struct disk* hd) {
  * @param ext_lba 
  */
 static void partition_scan(struct disk* hd, uint32_t ext_lba) {
+    // 因为需要一个扇区大小的内存空间，使用栈空间可能会爆栈，因为下面还要递归
     struct boot_sector* bs = sys_malloc(sizeof(struct boot_sector));
     ide_read(hd, ext_lba, bs, 1);
     uint8_t part_idx = 0;
+    // 获取分区表地址
     struct partition_table_entry* p = bs->partition_table;
-
     // 遍历分区表4个分区表项
     while (part_idx++ < 4) {
         // 若为扩展分区
@@ -391,16 +412,16 @@ static void partition_scan(struct disk* hd, uint32_t ext_lba) {
                 p_no++;
                 ASSERT(p_no < 4);  // 0,1,2,3
             } else {
-            hd->logic_parts[l_no].start_lba = ext_lba + p->start_lba;
-            hd->logic_parts[l_no].sec_cnt = p->sec_cnt;
-            hd->logic_parts[l_no].my_disk = hd;
-            list_append(&partition_list, &hd->logic_parts[l_no].part_tag);
-            // 逻辑分区数字是从 5 开始,主分区是 1～4
-            uint32_t name_len = sizeof(hd->logic_parts[l_no].name);
-            snprintf(hd->logic_parts[l_no].name, name_len-1, "%s%d", hd->name, l_no + 5);
-            l_no++;
-            if (l_no >= 8)    // 只支持8个逻辑分区,避免数组越界
-                return;
+                hd->logic_parts[l_no].start_lba = ext_lba + p->start_lba;
+                hd->logic_parts[l_no].sec_cnt = p->sec_cnt;
+                hd->logic_parts[l_no].my_disk = hd;
+                list_append(&partition_list, &hd->logic_parts[l_no].part_tag);
+                // 逻辑分区数字是从 5 开始,主分区是 1～4
+                uint32_t name_len = sizeof(hd->logic_parts[l_no].name);
+                snprintf(hd->logic_parts[l_no].name, name_len-1, "%s%d", hd->name, l_no + 5);
+                l_no++;
+                if (l_no >= 8)    // 只支持8个逻辑分区,避免数组越界
+                    return;
             }
         }
         p++;
@@ -428,10 +449,16 @@ static bool partition_info(struct list_elem* pelem, int arg) {
 
 /**
  * @brief 硬盘中断处理程序
+ * 注意：硬盘控制器的中断在下列情况下会被清掉
+ * 1. 读取了 status 寄存器
+ * 2. 发出了 reset 命令
+ * 3. 或者又向 reg_cmd 写了新的命令
  * 
  * @param irq_no 
  */
 void intr_hd_handler(uint8_t irq_no) {
+    // 0x2e 表示 8259A 的 IRQ14 接口，代表第一个 ATA 通道
+    // 0x2f 表示 8259A 的 IRQ15 接口，代表第二个 ATA 通道
     ASSERT(irq_no == 0x2e || irq_no == 0x2f);
     uint8_t ch_no = irq_no - 0x2e;
     struct ide_channel* channel = &channels[ch_no];
@@ -455,6 +482,7 @@ void intr_hd_handler(uint8_t irq_no) {
 void ide_init() {
     printk("ide_init start\n");
     // 获取硬盘的数量
+    // 注意：低端 1M 以内的虚拟地址和物理地址相同。所以虚拟地址 0x475 可以映射到物理地址 0x475 中
     uint8_t hd_cnt = *((uint8_t*)(0x475));
     printk("    ide_init hd_cnt: %d\n", hd_cnt);
     ASSERT(hd_cnt > 0);
