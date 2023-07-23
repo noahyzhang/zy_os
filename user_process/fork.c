@@ -20,6 +20,7 @@ static int32_t copy_pcb_vaddrbitmap_stack0(struct task_struct* child_thread, str
     memcpy(child_thread, parent_thread, PAGE_SIZE);
     child_thread->pid = fork_pid();
     child_thread->elapsed_ticks = 0;
+    // 让调度器安排上 CPU
     child_thread->status = TASK_READY;
     // 为新进程填充时间片
     child_thread->ticks = child_thread->priority;
