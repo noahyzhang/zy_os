@@ -40,7 +40,7 @@ static void idle(void* arg) {
 
 struct task_struct* running_thread(void) {
     uint32_t esp;
-    asm ("mov %%esp, %0" : "=g" (esp));
+    asm("mov %%esp, %0" : "=g" (esp));
     // 取 esp 整数部分，即 PCB 的起始地址
     return (struct task_struct*)(esp & 0xfffff000);
 }
@@ -173,6 +173,10 @@ static void make_main_thread(void) {
     list_append(&thread_all_list, &main_thread->all_list_tag);
 }
 
+/**
+ * @brief 任务调度
+ * 
+ */
 void schedule(void) {
     ASSERT(intr_get_status() == INTR_OFF);
     struct task_struct* cur = running_thread();
